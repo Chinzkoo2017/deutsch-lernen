@@ -139,6 +139,7 @@
     { id: 'ue1', name: 'Fleißig', mn: 'Übung 1-ийг дуусгасан', icon: 'pencil', test: () => !!(S.workbook.ue1 && S.workbook.ue1.full) },
     { id: 'rain30', name: 'Artikel-König', mn: 'Artikel-Regen 30+ оноо', icon: 'rain', test: () => ((S.games.artikel || {}).best || 0) >= 30 },
     { id: 'memory', name: 'Gutes Gedächtnis', mn: 'Memory-г 10 нүүдэлд', icon: 'grid', test: () => { const b = (S.games.memory || {}).best; return b != null && b <= 10; } },
+    { id: 'verbs50', name: 'Verben-Meister', mn: '50 дүрмийн бус үйл үг цээжилсэн', icon: 'bolt', test: () => D.IRREG.filter(v => (S.srs[v.wid] || {}).box >= 3).length >= 50 },
     { id: 'xp1000', name: 'Tausend XP', mn: '1000 XP цуглуулсан', icon: 'star', test: () => S.xp >= 1000 }
   ];
   function checkBadges() {
@@ -364,18 +365,20 @@
   /* ---------------- Чиглүүлэгч (router) ---------------- */
   const NAV = [
     { r: 'home', i: 'home', t: 'Start' },
-    { r: 'grammatik', i: 'book', t: 'Grammatik' },
-    { r: 'uebungen', i: 'pencil', t: 'Übungen' },
-    { r: 'wortschatz', i: 'cards', t: 'Wortschatz' },
+    { r: 'grammatik', i: 'book', t: 'Grammatik', s: 'Regeln' },
+    { r: 'starke', i: 'bolt', t: 'Starke Verben', s: 'Verben' },
+    { r: 'uebungen', i: 'pencil', t: 'Übungen', s: 'Übung' },
+    { r: 'wortschatz', i: 'cards', t: 'Wortschatz', s: 'Wörter' },
     { r: 'spiele', i: 'game', t: 'Spiele' },
     { r: 'fehler', i: 'alert', t: 'Fehlerheft' },
-    { r: 'fortschritt', i: 'chart', t: 'Fortschritt' }
+    { r: 'fortschritt', i: 'chart', t: 'Fortschritt', s: 'Profil' }
   ];
   const ASCII_WORDS = {
     home: ['DEUTSCH', 'LERNEN', 'B2'], grammatik: ['GRAMMATIK'], lesson: ['REGEL'], uebungen: ['ÜBUNG'], workbook: ['ÜBUNG'], mix: ['MIX'],
     wortschatz: ['WÖRTER'], karten: ['KARTEN'], quiz: ['QUIZ'], tippen: ['TIPPEN'], hoeren: ['HÖREN'],
     spiele: ['SPIELE'], artikel: ['DER', 'DIE', 'DAS'], verben: ['VERBEN'], habensein: ['HABEN', 'SEIN'], satzbau: ['SATZ'], memory: ['MEMORY'],
-    fehler: ['FEHLER'], fortschritt: ['B2']
+    fehler: ['FEHLER'], fortschritt: ['B2'],
+    starke: ['STARKE', 'VERBEN'], vgruppe: ['MUSTER'], vdrill: ['STAMM', 'FORMEN']
   };
   let disposers = [];
   const onDispose = fn => disposers.push(fn);
@@ -400,7 +403,7 @@
     const view = $('#view');
     view.innerHTML = '';
     fn(view, arg);
-    const navKey = { lesson: 'grammatik', workbook: 'uebungen', mix: 'uebungen', karten: 'wortschatz', quiz: 'wortschatz', tippen: 'wortschatz', hoeren: 'wortschatz', artikel: 'spiele', verben: 'spiele', habensein: 'spiele', satzbau: 'spiele', memory: 'spiele' }[r] || r;
+    const navKey = { lesson: 'grammatik', workbook: 'uebungen', mix: 'uebungen', karten: 'wortschatz', quiz: 'wortschatz', tippen: 'wortschatz', hoeren: 'wortschatz', artikel: 'spiele', verben: 'spiele', habensein: 'spiele', satzbau: 'spiele', memory: 'spiele', vgruppe: 'starke', vdrill: 'starke' }[r] || r;
     $$('#nav a, #bottom-nav a').forEach(a => a.classList.toggle('active', a.dataset.r === navKey));
     Ascii.setWords(ASCII_WORDS[r] || ASCII_WORDS.home);
     window.scrollTo(0, 0);
@@ -410,7 +413,7 @@
   /* ---------------- Хүрээ (nav, stats) ---------------- */
   function buildChrome() {
     $('#nav').innerHTML = NAV.map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.t}</span>${n.r === 'fehler' ? '<span class="count" id="mcount" hidden></span>' : ''}</a>`).join('');
-    $('#bottom-nav').innerHTML = NAV.filter(n => n.r !== 'fehler').map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.t}</span></a>`).join('');
+    $('#bottom-nav').innerHTML = NAV.filter(n => n.r !== 'fehler').map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.s || n.t}</span></a>`).join('');
     $('#t-name').textContent = CFG.teacher.name;
     $('#t-role').textContent = CFG.teacher.role;
     const vb = $('#t-voice'), mb = $('#t-mini');
@@ -451,7 +454,7 @@
       ${back ? `<a class="icon-btn" href="#${back}" title="Буцах" aria-label="Буцах">${icon('back')}</a>` : ''}
       <span class="crumb">${crumb}</span><span class="spacer"></span>
       <span class="chip-stat streak" title="Дараалсан өдөр">${icon('flame')}<b data-live-streak>${currentStreak()}</b></span>
-      <span class="chip-stat xp" title="Нийт XP">${icon('bolt')}<b data-live-xp>${S.xp}</b><span class="levelbar"><i data-live-level style="width:${pct}%"></i></span></span>
+      <a class="chip-stat xp" href="#fortschritt" title="Нийт XP — ахиц харах" style="color:inherit;text-decoration:none">${icon('bolt')}<b data-live-xp>${S.xp}</b><span class="levelbar"><i data-live-level style="width:${pct}%"></i></span></a>
     </div>`;
   }
 
@@ -527,6 +530,7 @@
         let xp = res.typo || usedHint ? 6 : 10;
         if (combo >= 3) xp += 2 * Math.min(combo - 2, 5);
         if (it.type === 'tense3') xp = Math.round(xp * 1.8);
+        if (it.type === 'vforms') xp = Math.round(xp * 1.5);
         addXP(xp, card);
         if (opts.mode === 'mistakes') removeMistake(it);
       } else {
@@ -550,7 +554,7 @@
       }
       const fb = document.createElement('div');
       fb.className = 'feedback ' + (res.ok ? 'ok' : 'bad');
-      fb.innerHTML = `<div class="fh">${icon(res.ok ? 'check' : 'x')} ${res.ok ? (res.typo ? 'Зөв! Бичлэгээ анхаараарай' : pick(['Зөв!', 'Яг зөв!', 'Сайн байна!'])) : (frac > 0 ? `Хагас зөв (${Math.round(frac * 3)}/3)` : 'Буруу')}</div>
+      fb.innerHTML = `<div class="fh">${icon(res.ok ? 'check' : 'x')} ${res.ok ? (res.typo ? 'Зөв! Бичлэгээ анхаараарай' : pick(['Зөв!', 'Яг зөв!', 'Сайн байна!'])) : (frac > 0 ? `Хагас зөв (${res.parts ? res.parts.join('/') : Math.round(frac * 3) + '/3'})` : 'Буруу')}</div>
         ${res.feedbackHTML || ''}
         ${it.explain ? `<div class="ex">${esc(it.explain)}</div>` : ''}`;
       card.insertBefore(fb, actions);
@@ -725,6 +729,41 @@
       };
       return R;
     },
+    vforms(card, it) {
+      const vb = it.v;
+      const grp = D.IRREG_GROUPS.find(g => g.k === vb.g);
+      const rows = [['er', 'er/sie/es', 'er …'], ['prat', 'Präteritum', 'er …'], ['perf', 'Perfekt', 'er hat / ist …']];
+      card.insertAdjacentHTML('afterbegin', `<div class="label">Stammformen · гурван хэлбэр</div>
+        <div class="row-flex" style="gap:10px"><div class="q" style="font-size:clamp(28px,4vw,38px)">${esc(vb.inf)}</div>${sayBtn(vb.inf)}</div>
+        <div class="sub-mn" style="margin-top:-12px">${esc(vb.mn)}</div>
+        <div class="vhint muted" hidden style="font-size:14px">Загвар: <b>${esc(grp ? grp.p : '')}</b> — ${esc(grp ? grp.mn : '')}</div>
+        <div class="tense-rows">${rows.map(([k, n, ph]) => `<div class="tense-row"><span class="tl">${n}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
+        ${umlautBar()}`);
+      const fields = $$('input[data-t]', card);
+      fields.forEach((f, k) => f.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && k < 2 && !f.readOnly) { e.preventDefault(); e.stopPropagation(); fields[k + 1].focus(); }
+      }));
+      const strip = s => s.trim().replace(/^(er|sie|es)\s+/i, '');
+      return {
+        hint() { $('.vhint', card).hidden = false; },
+        check() {
+          if (fields.every(f => !f.value.trim())) { fields[0].focus(); return null; }
+          let good = 0;
+          rows.forEach(([k], idx) => {
+            const f = fields[idx];
+            const r = judge(strip(f.value), [vb[k]]);
+            f.readOnly = true; f.classList.add(r.ok ? 'ok' : 'bad');
+            if (r.ok) good++;
+            $(`[data-fb="${k}"]`, card).innerHTML = r.ok ? '' : `<span class="diff">${diffHTML(vb[k], strip(f.value))}</span>`;
+          });
+          return {
+            ok: good === 3, frac: good / 3, parts: [good, 3],
+            sayAnswer: `${vb.inf}. ${vb.prat}. ${vb.perf}.`,
+            feedbackHTML: `<div class="ans">${esc(vb.inf)} – ${esc(vb.er)} – ${esc(vb.prat)} – ${esc(vb.perf)} ${sayBtn(`${vb.inf}. ${vb.er}. ${vb.prat}. ${vb.perf}.`)}</div>`
+          };
+        }
+      };
+    },
     tense3(card, it) {
       const tenses = [['p', 'Präsens'], ['pr', 'Präteritum'], ['pf', 'Perfekt']];
       card.insertAdjacentHTML('afterbegin', `<div class="label">Гурван цагаар орчуул</div>
@@ -814,7 +853,9 @@
         <div class="stat"><span class="label">Streak</span><b>${currentStreak()}</b><span class="muted" style="font-size:13px">өдөр дараалан</span></div>
         <div class="stat"><span class="label">Цээжилсэн</span><b>${learnedCount()}</b><span class="muted" style="font-size:13px">/ ${W.length} үг</span></div>
       </div>
-      <div class="grid c3">
+      <div class="grid c2">
+        <a class="tile" href="#starke"><span class="tile-ico">${icon('bolt')}</span><span class="h-card">Starke Verben</span><span class="muted">${D.IRREG.length} дүрмийн бус үйл үг — 3 хэлбэрийг нь хурдан цээжил</span>
+          <span class="tile-foot"><span class="progress ok"><i style="width:${Math.round(100 * irrMastered() / D.IRREG.length)}%"></i></span>${irrMastered()}/${D.IRREG.length}</span></a>
         <a class="tile" href="#workbook-ue1"><span class="tile-ico">${icon('pencil')}</span><span class="h-card">Übung 1</span><span class="muted">Дасгалын ном, 2-р хуудас — 3 цагаар орчуулах</span>
           <span class="tile-foot"><span class="progress ok"><i style="width:${ue.best || 0}%"></i></span>${ue.best ? ue.best + '%' : 'шинэ'}</span></a>
         <a class="tile" href="#karten"><span class="tile-ico">${icon('cards')}</span><span class="h-card">Karteikarten</span><span class="muted">${due ? `${due} үг давтах цаг болсон` : `${fresh} шинэ үг хүлээж байна`}</span>
@@ -964,14 +1005,15 @@
     draw();
   };
 
-  VIEWS.karten = function (v) {
-    let queue = dueWords().sort((a, b) => S.srs[a.id].due.localeCompare(S.srs[b.id].due)).slice(0, 20);
-    if (queue.length < 12) queue = queue.concat(newWords().slice(0, Math.min(8, 12 - queue.length)));
-    if (!queue.length) queue = sample(W, 10);
+  VIEWS.karten = function (v, tag) {
+    const inTag = w => !tag || w.tags.includes(tag);
+    let queue = dueWords().filter(inTag).sort((a, b) => S.srs[a.id].due.localeCompare(S.srs[b.id].due)).slice(0, 20);
+    if (queue.length < 12) queue = queue.concat(newWords().filter(inTag).slice(0, Math.min(tag ? 12 : 8, 12 - queue.length)));
+    if (!queue.length) queue = sample(W.filter(inTag), 10);
     queue = shuffle(queue);
     let idx = 0, flipped = false, known = 0;
     const dir = () => S.settings.cardDir;
-    v.innerHTML = `${topbar('Wortschatz · Karteikarten', 'wortschatz')}
+    v.innerHTML = `${topbar(tag === 'irr' ? 'Starke Verben · Karteikarten' : 'Wortschatz · Karteikarten', tag === 'irr' ? 'starke' : 'wortschatz')}
       <div class="row-flex" style="justify-content:space-between">
         <h1 class="h-sec">Karteikarten</h1>
         <div class="seg" id="dir"><button data-d="de" class="${dir() === 'de' ? 'on' : ''}">DE → MN</button><button data-d="mn" class="${dir() === 'mn' ? 'on' : ''}">MN → DE</button></div>
@@ -1018,7 +1060,7 @@
       teacherSay('Karten fertig! Super!', 'Картууд дууслаа! Гайхалтай!', 'happy', true);
       confetti();
       v.querySelector('.flash-wrap').outerHTML = `<div class="panel result"><div class="label">Karteikarten · дууслаа</div><div class="big">${known}</div><div class="muted">үгийг «мэднэ» гэж үнэллээ · нийт цээжилсэн: ${learnedCount()}</div>
-        <div class="row-flex" style="justify-content:center"><a class="btn primary" data-go="karten" href="#karten">${icon('refresh')} Дахин</a><a class="btn" href="#quiz">Quiz</a><a class="btn ghost" href="#wortschatz">Буцах</a></div></div>`;
+        <div class="row-flex" style="justify-content:center"><a class="btn primary" data-go="karten${tag ? '-' + tag : ''}" href="#karten${tag ? '-' + tag : ''}">${icon('refresh')} Дахин</a><a class="btn" href="#quiz">Quiz</a><a class="btn ghost" href="#wortschatz">Буцах</a></div></div>`;
       rate.remove(); $('#khint', v).remove();
       $('#kp', v).style.width = '100%';
     }
@@ -1058,6 +1100,132 @@
     if (!('speechSynthesis' in window)) { $('#hr', v).innerHTML = `<div class="panel empty">Энэ браузер дуу унших (speech synthesis) боломжгүй байна. Chrome эсвэл Edge-ээр нээгээрэй.</div>`; return; }
     const items = vocabPool(8).map(w => ({ type: 'listen', wid: w.id, audio: wordLabel(w), options: [w.mn, ...distract(w, 'mn')], answer: w.mn }));
     runSession($('#hr', v), items, { title: 'Hören', topic: 'Wortschatz', onAnswer: vocabOnAnswer, onQuit: () => go('wortschatz') });
+  };
+
+  /* ---------- Дүрмийн бус үйл үг (Starke Verben) ---------- */
+  function irrMastered(list) { return (list || D.IRREG).filter(x => ((S.srs[x.wid] || {}).box || 0) >= 3).length; }
+  const auxHTML = perf => esc(perf).replace(/^ist /, '<span class="aux-sein">ist</span> ');
+  function irrTable(list, opts = {}) {
+    return `<div class="row-flex" style="justify-content:space-between">
+        <div class="seg" data-hidectl>${[['none', 'Бүгдийг харах'], ['forms', 'Хэлбэрийг нуух'], ['de', 'Германыг нуух']].map(([k, t]) => `<button data-h="${k}" class="${k === 'none' ? 'on' : ''}">${t}</button>`).join('')}</div>
+        ${opts.search ? `<input class="field" data-vsearch placeholder="Хайх: schreiben, бичих…" style="max-width:240px;padding:9px 14px;font-size:14px">` : ''}
+      </div>
+      <p class="muted" data-hidetip hidden style="margin:0;font-size:13px">Нуусан нүдэн дээр дарж шалгана. Эхлээд толгойдоо хэлээд дараа нь нээ!</p>
+      <div class="table-wrap"><table class="gt vt"><thead><tr><th>Infinitiv</th><th>er/sie/es</th><th>Präteritum</th><th>Perfekt</th><th>Монгол</th><th></th></tr></thead>
+      <tbody>${list.map((x, k) => {
+        const box = (S.srs[x.wid] || {}).box || 0;
+        return `<tr data-k="${k}" data-s="${esc(norm(x.inf + ' ' + x.mn + ' ' + x.prat + ' ' + x.perf))}">
+          <td class="d"><b>${esc(x.inf)}</b> <span class="lvl-dots" title="Хайрцаг ${box}/5">${[1, 2, 3, 4, 5].map(n => `<i class="${n <= box ? 'on' : ''}"></i>`).join('')}</span></td>
+          <td class="d f">${esc(x.er)}</td><td class="d f">${esc(x.prat)}</td><td class="d f">${auxHTML(x.perf)}</td>
+          <td class="m">${esc(x.mn)}</td><td>${sayBtn(`${x.inf}. ${x.prat}. ${x.perf}.`)}</td></tr>`;
+      }).join('')}</tbody></table></div>`;
+  }
+  function wireIrrTable(root) {
+    const table = $('table.vt', root);
+    $$('[data-hidectl] button', root).forEach(b => b.addEventListener('click', () => {
+      $$('[data-hidectl] button', root).forEach(x => x.classList.toggle('on', x === b));
+      table.classList.toggle('hide-forms', b.dataset.h === 'forms');
+      table.classList.toggle('hide-de', b.dataset.h === 'de');
+      $$('td.rev', table).forEach(td => td.classList.remove('rev'));
+      $('[data-hidetip]', root).hidden = b.dataset.h === 'none';
+    }));
+    table.addEventListener('click', e => {
+      const td = e.target.closest('td.d');
+      if (!td || !(table.classList.contains('hide-forms') || table.classList.contains('hide-de'))) return;
+      td.classList.toggle('rev');
+      if (td.classList.contains('rev')) speak(td.textContent.trim());
+    });
+    const s = $('[data-vsearch]', root);
+    if (s) s.addEventListener('input', () => { const q = norm(s.value); $$('tbody tr', table).forEach(tr => tr.hidden = !!q && !tr.dataset.s.includes(q)); });
+  }
+
+  VIEWS.starke = function (v) {
+    const I = D.IRREG, m = irrMastered();
+    const due = I.filter(x => S.srs[x.wid] && S.srs[x.wid].due <= today()).length;
+    v.innerHTML = `${topbar('Starke Verben')}
+      <div class="lesson-head"><h1 class="h-hero">Starke Verben</h1>
+        <p class="sub-mn" style="margin:0">${I.length} дүрмийн бус үйл үг — эгшгийн өөрчлөлтийн <b>загвараар</b> бүлэглэсэн. Нэг загварыг мэдвэл тэр бүлгийн бүх үгийг хамт цээжилнэ.</p></div>
+      <section class="panel" style="display:grid;gap:16px">
+        <div class="row-flex" style="justify-content:space-between;align-items:flex-end">
+          <div style="display:grid;gap:4px"><div class="label">Цээжилсэн</div><div class="h-hero" style="font-size:40px">${m}<span class="muted" style="font-size:18px;font-weight:500"> / ${I.length}</span></div></div>
+          <span class="pill gold">${due ? due + ' үг давтах цаг болсон' : 'Өнөөдрийн давталт хоосон'}</span>
+        </div>
+        <div class="progress ok"><i style="width:${Math.round(100 * m / I.length)}%"></i></div>
+        <div class="row-flex">
+          <a class="btn gold" href="#vdrill">${icon('keyboard')} Өдрийн 12 — Stammformen</a>
+          <a class="btn" href="#karten-irr">${icon('cards')} Карт</a>
+          <a class="btn" href="#verben">${icon('clock')} Verb-Blitz</a>
+        </div>
+      </section>
+      <h2 class="h-sec">Загвараар цээжлэх</h2>
+      <div class="grid c2">${D.IRREG_GROUPS.map(g => {
+        const list = I.filter(x => x.g === g.k), gm = irrMastered(list);
+        return `<a class="tile ${gm === list.length ? 'done' : ''}" href="#vgruppe-${g.k}">
+          <span class="nr">${list.length} үйл үг</span>
+          <span class="h-card">${esc(g.p)}</span>
+          <span class="muted">${esc(g.mn)}</span>
+          <span class="tile-foot"><span class="progress ok"><i style="width:${Math.round(100 * gm / list.length)}%"></i></span>${gm}/${list.length}</span></a>`;
+      }).join('')}</div>
+      <section class="panel tight" style="display:grid;gap:14px" id="irr-all"><div class="label" style="margin:4px 4px 0">Бүх жагсаалт</div>${irrTable(I, { search: true })}</section>`;
+    wireIrrTable($('#irr-all', v));
+    teacherSay('Starke Verben muss man auswendig lernen!', 'Хүчтэй үйл үгсийг цээжлэх л ёстой. Загвараар нь сурвал хурдан!', 'wave', false);
+  };
+
+  VIEWS.vgruppe = function (v, key) {
+    const g = D.IRREG_GROUPS.find(x => x.k === key);
+    if (!g) return VIEWS.starke(v);
+    const list = D.IRREG.filter(x => x.g === key);
+    v.innerHTML = `${topbar('Starke Verben · ' + esc(g.p), 'starke')}
+      <div class="lesson-head"><span class="pill gold" style="justify-self:start">${list.length} үйл үг</span><h1 class="h-hero">${esc(g.p)}</h1><p class="sub-mn" style="margin:0">${esc(g.mn)}</p></div>
+      <div class="row-flex">
+        <a class="btn gold" href="#vdrill-${key}">${icon('keyboard')} Энэ бүлгийг давтах</a>
+        <button class="btn" id="playall">${icon('speaker')} Дуудаж сонсох</button>
+      </div>
+      <p class="muted" style="margin:0;font-size:14px">«Дуудаж сонсох» нь бүх үгийг <i>schreiben – schrieb – geschrieben</i> гэж дараалан уншина. Хамт чангаар давтаж хэлбэл хамгийн хурдан тогтоно.</p>
+      <section class="panel tight" style="display:grid;gap:14px" id="grp">${irrTable(list)}</section>`;
+    wireIrrTable($('#grp', v));
+    let playing = false;
+    const btn = $('#playall', v);
+    const stop = () => { playing = false; btn.innerHTML = `${icon('speaker')} Дуудаж сонсох`; $$('tr.playing', v).forEach(r => r.classList.remove('playing')); if ('speechSynthesis' in window) speechSynthesis.cancel(); };
+    btn.addEventListener('click', () => {
+      if (playing) return stop();
+      if (!('speechSynthesis' in window)) { toast('Энэ браузер дуу уншихгүй байна'); return; }
+      playing = true; btn.innerHTML = `${icon('x')} Зогсоох`;
+      let k = 0;
+      const rows = $$('tbody tr', v);
+      const next = () => {
+        if (!playing) return;
+        if (k >= list.length) return stop();
+        rows.forEach(r => r.classList.remove('playing'));
+        rows[k].classList.add('playing');
+        rows[k].scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+        const x = list[k++];
+        speak(`${x.inf}. ${x.prat}. ${x.perf}.`, { rate: Math.min(S.settings.rate, .88), onend: () => setTimeout(next, 700) });
+      };
+      next();
+    });
+    onDispose(() => { playing = false; });
+  };
+
+  VIEWS.vdrill = function (v, key) {
+    const I = D.IRREG;
+    let list;
+    if (key) list = shuffle(I.filter(x => x.g === key));
+    else {
+      const due = shuffle(I.filter(x => S.srs[x.wid] && S.srs[x.wid].due <= today()));
+      list = due.slice(0, 12);
+      if (list.length < 12) list = list.concat(I.filter(x => !S.srs[x.wid]).slice(0, 12 - list.length));
+      if (list.length < 12) list = list.concat(sample(I.filter(x => !list.includes(x)), 12 - list.length));
+      list = shuffle(list);
+    }
+    const g = key && D.IRREG_GROUPS.find(x => x.k === key);
+    v.innerHTML = `${topbar('Starke Verben · Stammformen', key ? 'vgruppe-' + key : 'starke')}
+      <div class="lesson-head"><h1 class="h-sec">${g ? esc(g.p) : 'Өдрийн 12'}</h1><p class="muted" style="margin:0">er/sie/es хэлбэр, Präteritum, Perfekt (haben/sein-тэй нь) бич. Enter дарвал дараагийн нүд рүү шилжинэ. Сануулга нь эгшгийн загварыг харуулна.</p></div>
+      <div id="vd"></div>`;
+    runSession($('#vd', v), list.map(x => ({ type: 'vforms', q: x.inf + ' → Stammformen', v: x, wid: x.wid })), {
+      title: 'Stammformen', topic: 'Starke Verben', reshuffle: true, onAnswer: vocabOnAnswer,
+      onQuit: () => go(key ? 'vgruppe-' + key : 'starke')
+    });
   };
 
   /* ---------- Тоглоомууд ---------- */
@@ -1326,7 +1494,7 @@
     host.innerHTML = `<div class="row-flex"><button class="btn gold" id="fstart">${icon('refresh')} Бүгдийг давтах (${Math.min(15, S.mistakes.length)})</button><button class="btn ghost" id="fclear">Цэвэрлэх</button></div>
       <section class="panel tight" style="margin-top:16px;padding:0">${S.mistakes.map(m => {
         const it = m.item;
-        const ans = it.answer || (it.answers && it.answers[0]) || (it.pf && it.pf[0]) || '';
+        const ans = it.answer || (it.answers && it.answers[0]) || (it.pf && it.pf[0]) || (it.v ? `${it.v.inf} – ${it.v.er} – ${it.v.prat} – ${it.v.perf}` : '');
         return `<div class="mistake"><span class="label">${esc(m.topic || '')}</span><div>${gapify(it.q || it.mn)}</div>${m.user ? `<div class="mu">${esc(m.user)}</div>` : ''}<div class="mc">${esc(ans)} ${/[a-zäöüß]/i.test(ans) ? sayBtn(ans) : ''}</div></div>`;
       }).join('')}</section>`;
     $('#fstart', v).addEventListener('click', () => {

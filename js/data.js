@@ -125,10 +125,162 @@
     V('warten', 'хүлээх', 'wartete', 'hat gewartet', ['tafel']),
     A('weiß', 'цагаан', ['ue1'])
   ];
+  /* ---------- Дүрмийн бус (хүчтэй) үйл үг ----------
+     [Infinitiv, er/sie/es (Präsens), Präteritum, Perfekt, монгол, бүлэг] */
+  const IRREG_GROUPS = [
+    { k: 'sonder', p: 'Хамгийн чухал', mn: 'sein, haben, werden, gehen… — өдөр бүр хэрэглэнэ, эхэлж цээжил.' },
+    { k: 'modal', p: 'Modalverben', mn: 'Präteritum-д умлаут алга болно: können → konnte, müssen → musste.' },
+    { k: 'ei-ie', p: 'ei → ie → ie', mn: 'schreiben – schrieb – geschrieben' },
+    { k: 'ei-i', p: 'ei → i → i', mn: 'Гийгүүлэгч давхардана: schneiden – schnitt – geschnitten' },
+    { k: 'ie-o', p: 'ie → o → o', mn: 'fliegen – flog – geflogen' },
+    { k: 'i-a-u', p: 'i → a → u', mn: 'trinken – trank – getrunken' },
+    { k: 'i-a-o', p: 'i → a → o', mn: 'beginnen – begann – begonnen' },
+    { k: 'e-a-o', p: 'e → a → o', mn: 'er/sie хэлбэрт e → i(e): sprechen → er spricht' },
+    { k: 'e-a-e', p: 'e → a → e', mn: 'er/sie хэлбэрт e → i(e): sehen → er sieht' },
+    { k: 'a-u-a', p: 'a → u → a', mn: 'er/sie хэлбэрт a → ä: fahren → er fährt' },
+    { k: 'a-ie-a', p: '… → ie → …', mn: 'Präteritum-д ie (i) гарч, Partizip нь Infinitiv руу буцна: schlafen – schlief – geschlafen' },
+    { k: 'misch', p: 'Mischverben', mn: 'Сул үйл үг шиг -te, гэхдээ эгшиг солигдоно: denken – dachte – gedacht' },
+    { k: 'praefix', p: 'Угтвартай', mn: 'Үндсэн үйл үгийнхээ хэлбэрийг дагана: verstehen ← stehen, anfangen ← fangen' }
+  ];
+  const IRREG = [
+    ['sein', 'ist', 'war', 'ist gewesen', 'байх', 'sonder'],
+    ['haben', 'hat', 'hatte', 'hat gehabt', 'байх (эзэмших)', 'sonder'],
+    ['werden', 'wird', 'wurde', 'ist geworden', 'болох', 'sonder'],
+    ['gehen', 'geht', 'ging', 'ist gegangen', 'явах (явганаар)', 'sonder'],
+    ['kommen', 'kommt', 'kam', 'ist gekommen', 'ирэх', 'sonder'],
+    ['stehen', 'steht', 'stand', 'hat gestanden', 'зогсох', 'sonder'],
+    ['tun', 'tut', 'tat', 'hat getan', 'хийх', 'sonder'],
+    ['liegen', 'liegt', 'lag', 'hat gelegen', 'хэвтэх', 'sonder'],
+    ['sitzen', 'sitzt', 'saß', 'hat gesessen', 'суух', 'sonder'],
+    ['bitten', 'bittet', 'bat', 'hat gebeten', 'гуйх', 'sonder'],
+    ['hängen', 'hängt', 'hing', 'hat gehangen', 'өлгөөтэй байх', 'sonder'],
+    ['können', 'kann', 'konnte', 'hat gekonnt', 'чадах', 'modal'],
+    ['müssen', 'muss', 'musste', 'hat gemusst', 'ёстой', 'modal'],
+    ['dürfen', 'darf', 'durfte', 'hat gedurft', 'болох (зөвшөөрөл)', 'modal'],
+    ['wollen', 'will', 'wollte', 'hat gewollt', 'хүсэх', 'modal'],
+    ['mögen', 'mag', 'mochte', 'hat gemocht', 'дуртай байх', 'modal'],
+    ['bleiben', 'bleibt', 'blieb', 'ist geblieben', 'үлдэх', 'ei-ie'],
+    ['leihen', 'leiht', 'lieh', 'hat geliehen', 'зээлэх, зээлдүүлэх', 'ei-ie'],
+    ['scheinen', 'scheint', 'schien', 'hat geschienen', 'гэрэлтэх; …мэт санагдах', 'ei-ie'],
+    ['schreiben', 'schreibt', 'schrieb', 'hat geschrieben', 'бичих', 'ei-ie'],
+    ['schreien', 'schreit', 'schrie', 'hat geschrien', 'хашгирах', 'ei-ie'],
+    ['schweigen', 'schweigt', 'schwieg', 'hat geschwiegen', 'дуугүй байх', 'ei-ie'],
+    ['steigen', 'steigt', 'stieg', 'ist gestiegen', 'авирах, өсөх', 'ei-ie'],
+    ['treiben', 'treibt', 'trieb', 'hat getrieben', 'хөөх; (спорт) хичээллэх', 'ei-ie'],
+    ['verzeihen', 'verzeiht', 'verzieh', 'hat verziehen', 'уучлах', 'ei-ie'],
+    ['entscheiden', 'entscheidet', 'entschied', 'hat entschieden', 'шийдэх', 'ei-ie'],
+    ['beweisen', 'beweist', 'bewies', 'hat bewiesen', 'нотлох', 'ei-ie'],
+    ['beißen', 'beißt', 'biss', 'hat gebissen', 'хазах', 'ei-i'],
+    ['greifen', 'greift', 'griff', 'hat gegriffen', 'шүүрэх, барих', 'ei-i'],
+    ['leiden', 'leidet', 'litt', 'hat gelitten', 'зовох', 'ei-i'],
+    ['pfeifen', 'pfeift', 'pfiff', 'hat gepfiffen', 'исгэрэх', 'ei-i'],
+    ['reiten', 'reitet', 'ritt', 'ist geritten', 'морь унах', 'ei-i'],
+    ['schneiden', 'schneidet', 'schnitt', 'hat geschnitten', 'огтлох, хэрчих', 'ei-i'],
+    ['streiten', 'streitet', 'stritt', 'hat gestritten', 'маргалдах', 'ei-i'],
+    ['vergleichen', 'vergleicht', 'verglich', 'hat verglichen', 'харьцуулах', 'ei-i'],
+    ['bieten', 'bietet', 'bot', 'hat geboten', 'санал болгох', 'ie-o'],
+    ['verbieten', 'verbietet', 'verbot', 'hat verboten', 'хориглох', 'ie-o'],
+    ['fliegen', 'fliegt', 'flog', 'ist geflogen', 'нисэх', 'ie-o'],
+    ['fliehen', 'flieht', 'floh', 'ist geflohen', 'зугтах', 'ie-o'],
+    ['fließen', 'fließt', 'floss', 'ist geflossen', 'урсах', 'ie-o'],
+    ['frieren', 'friert', 'fror', 'hat gefroren', 'даарах', 'ie-o'],
+    ['genießen', 'genießt', 'genoss', 'hat genossen', 'таашаах', 'ie-o'],
+    ['gießen', 'gießt', 'goss', 'hat gegossen', 'услах', 'ie-o'],
+    ['riechen', 'riecht', 'roch', 'hat gerochen', 'үнэрлэх, үнэртэх', 'ie-o'],
+    ['schieben', 'schiebt', 'schob', 'hat geschoben', 'түлхэх', 'ie-o'],
+    ['schießen', 'schießt', 'schoss', 'hat geschossen', 'буудах', 'ie-o'],
+    ['schließen', 'schließt', 'schloss', 'hat geschlossen', 'хаах', 'ie-o'],
+    ['verlieren', 'verliert', 'verlor', 'hat verloren', 'алдах, гээх', 'ie-o'],
+    ['wiegen', 'wiegt', 'wog', 'hat gewogen', 'жинлэх, жинтэй байх', 'ie-o'],
+    ['ziehen', 'zieht', 'zog', 'hat gezogen', 'татах', 'ie-o'],
+    ['lügen', 'lügt', 'log', 'hat gelogen', 'худал хэлэх', 'ie-o'],
+    ['binden', 'bindet', 'band', 'hat gebunden', 'уях', 'i-a-u'],
+    ['finden', 'findet', 'fand', 'hat gefunden', 'олох; бодох', 'i-a-u'],
+    ['gelingen', 'gelingt', 'gelang', 'ist gelungen', 'бүтэх, амжих', 'i-a-u'],
+    ['klingen', 'klingt', 'klang', 'hat geklungen', 'сонсогдох', 'i-a-u'],
+    ['singen', 'singt', 'sang', 'hat gesungen', 'дуулах', 'i-a-u'],
+    ['sinken', 'sinkt', 'sank', 'ist gesunken', 'живэх, буурах', 'i-a-u'],
+    ['springen', 'springt', 'sprang', 'ist gesprungen', 'үсрэх', 'i-a-u'],
+    ['trinken', 'trinkt', 'trank', 'hat getrunken', 'уух', 'i-a-u'],
+    ['verschwinden', 'verschwindet', 'verschwand', 'ist verschwunden', 'алга болох', 'i-a-u'],
+    ['zwingen', 'zwingt', 'zwang', 'hat gezwungen', 'албадах', 'i-a-u'],
+    ['beginnen', 'beginnt', 'begann', 'hat begonnen', 'эхлэх', 'i-a-o'],
+    ['gewinnen', 'gewinnt', 'gewann', 'hat gewonnen', 'ялах, хожих', 'i-a-o'],
+    ['schwimmen', 'schwimmt', 'schwamm', 'ist geschwommen', 'сэлэх', 'i-a-o'],
+    ['brechen', 'bricht', 'brach', 'hat gebrochen', 'хугалах', 'e-a-o'],
+    ['empfehlen', 'empfiehlt', 'empfahl', 'hat empfohlen', 'зөвлөх', 'e-a-o'],
+    ['gelten', 'gilt', 'galt', 'hat gegolten', 'хүчинтэй байх', 'e-a-o'],
+    ['helfen', 'hilft', 'half', 'hat geholfen', 'туслах', 'e-a-o'],
+    ['nehmen', 'nimmt', 'nahm', 'hat genommen', 'авах', 'e-a-o'],
+    ['sprechen', 'spricht', 'sprach', 'hat gesprochen', 'ярих', 'e-a-o'],
+    ['stehlen', 'stiehlt', 'stahl', 'hat gestohlen', 'хулгайлах', 'e-a-o'],
+    ['sterben', 'stirbt', 'starb', 'ist gestorben', 'нас барах', 'e-a-o'],
+    ['treffen', 'trifft', 'traf', 'hat getroffen', 'уулзах; онох', 'e-a-o'],
+    ['werfen', 'wirft', 'warf', 'hat geworfen', 'шидэх', 'e-a-o'],
+    ['sich bewerben', 'bewirbt sich', 'bewarb sich', 'hat sich beworben', 'ажилд өргөдөл гаргах', 'e-a-o'],
+    ['erschrecken', 'erschrickt', 'erschrak', 'ist erschrocken', 'цочих, айх', 'e-a-o'],
+    ['essen', 'isst', 'aß', 'hat gegessen', 'идэх', 'e-a-e'],
+    ['geben', 'gibt', 'gab', 'hat gegeben', 'өгөх', 'e-a-e'],
+    ['geschehen', 'geschieht', 'geschah', 'ist geschehen', 'тохиолдох', 'e-a-e'],
+    ['lesen', 'liest', 'las', 'hat gelesen', 'унших', 'e-a-e'],
+    ['messen', 'misst', 'maß', 'hat gemessen', 'хэмжих', 'e-a-e'],
+    ['sehen', 'sieht', 'sah', 'hat gesehen', 'харах', 'e-a-e'],
+    ['treten', 'tritt', 'trat', 'ist getreten', 'орох; гишгэх', 'e-a-e'],
+    ['vergessen', 'vergisst', 'vergaß', 'hat vergessen', 'мартах', 'e-a-e'],
+    ['fahren', 'fährt', 'fuhr', 'ist gefahren', '(унаагаар) явах', 'a-u-a'],
+    ['laden', 'lädt', 'lud', 'hat geladen', 'ачих; цэнэглэх', 'a-u-a'],
+    ['schlagen', 'schlägt', 'schlug', 'hat geschlagen', 'цохих', 'a-u-a'],
+    ['tragen', 'trägt', 'trug', 'hat getragen', 'өмсөх, зүүх, зөөх', 'a-u-a'],
+    ['wachsen', 'wächst', 'wuchs', 'ist gewachsen', 'ургах, өсөх', 'a-u-a'],
+    ['waschen', 'wäscht', 'wusch', 'hat gewaschen', 'угаах', 'a-u-a'],
+    ['fallen', 'fällt', 'fiel', 'ist gefallen', 'унах', 'a-ie-a'],
+    ['gefallen', 'gefällt', 'gefiel', 'hat gefallen', 'таалагдах', 'a-ie-a'],
+    ['halten', 'hält', 'hielt', 'hat gehalten', 'барих; зогсох', 'a-ie-a'],
+    ['lassen', 'lässt', 'ließ', 'hat gelassen', 'орхих; зөвшөөрөх', 'a-ie-a'],
+    ['raten', 'rät', 'riet', 'hat geraten', 'зөвлөх; таах', 'a-ie-a'],
+    ['schlafen', 'schläft', 'schlief', 'hat geschlafen', 'унтах', 'a-ie-a'],
+    ['fangen', 'fängt', 'fing', 'hat gefangen', 'барьж авах', 'a-ie-a'],
+    ['laufen', 'läuft', 'lief', 'ist gelaufen', 'гүйх, алхах', 'a-ie-a'],
+    ['rufen', 'ruft', 'rief', 'hat gerufen', 'дуудах', 'a-ie-a'],
+    ['heißen', 'heißt', 'hieß', 'hat geheißen', 'нэртэй байх', 'a-ie-a'],
+    ['bringen', 'bringt', 'brachte', 'hat gebracht', 'авчрах', 'misch'],
+    ['denken', 'denkt', 'dachte', 'hat gedacht', 'бодох', 'misch'],
+    ['kennen', 'kennt', 'kannte', 'hat gekannt', 'таних', 'misch'],
+    ['nennen', 'nennt', 'nannte', 'hat genannt', 'нэрлэх', 'misch'],
+    ['rennen', 'rennt', 'rannte', 'ist gerannt', 'хурдан гүйх', 'misch'],
+    ['brennen', 'brennt', 'brannte', 'hat gebrannt', 'шатах', 'misch'],
+    ['wissen', 'weiß', 'wusste', 'hat gewusst', 'мэдэх', 'misch'],
+    ['verstehen', 'versteht', 'verstand', 'hat verstanden', 'ойлгох', 'praefix'],
+    ['aufstehen', 'steht auf', 'stand auf', 'ist aufgestanden', 'босох', 'praefix'],
+    ['bekommen', 'bekommt', 'bekam', 'hat bekommen', 'хүлээн авах', 'praefix'],
+    ['ankommen', 'kommt an', 'kam an', 'ist angekommen', 'хүрч ирэх', 'praefix'],
+    ['anfangen', 'fängt an', 'fing an', 'hat angefangen', 'эхлэх', 'praefix'],
+    ['anrufen', 'ruft an', 'rief an', 'hat angerufen', 'утасдах', 'praefix'],
+    ['einladen', 'lädt ein', 'lud ein', 'hat eingeladen', 'урих', 'praefix'],
+    ['einschlafen', 'schläft ein', 'schlief ein', 'ist eingeschlafen', 'унтаж орох', 'praefix'],
+    ['aussehen', 'sieht aus', 'sah aus', 'hat ausgesehen', 'харагдах', 'praefix'],
+    ['fernsehen', 'sieht fern', 'sah fern', 'hat ferngesehen', 'зурагт үзэх', 'praefix'],
+    ['vorschlagen', 'schlägt vor', 'schlug vor', 'hat vorgeschlagen', 'санал болгох', 'praefix'],
+    ['umziehen', 'zieht um', 'zog um', 'ist umgezogen', 'нүүх', 'praefix'],
+    ['beschreiben', 'beschreibt', 'beschrieb', 'hat beschrieben', 'тайлбарлах', 'praefix'],
+    ['unterschreiben', 'unterschreibt', 'unterschrieb', 'hat unterschrieben', 'гарын үсэг зурах', 'praefix'],
+    ['erfahren', 'erfährt', 'erfuhr', 'hat erfahren', 'мэдэж авах', 'praefix'],
+    ['verlassen', 'verlässt', 'verließ', 'hat verlassen', 'орхиж явах', 'praefix'],
+    ['erhalten', 'erhält', 'erhielt', 'hat erhalten', 'хүлээн авах', 'praefix']
+  ].map(([inf, er, prat, perf, mn, g]) => ({ inf, er, prat, perf, mn, g }));
+
+  // Үгсийн сантай нэгтгэнэ (карт, SRS-д ашиглана)
+  IRREG.forEach(v => {
+    const w = VOCAB.find(x => x.type === 'verb' && x.de === v.inf);
+    if (w) { w.tags.push('irr'); w.er = v.er; }
+    else { const nv = V(v.inf, v.mn, v.prat, v.perf, ['irr']); nv.er = v.er; VOCAB.push(nv); }
+  });
+
   VOCAB.forEach((w, i) => {
     w.id = (w.art ? w.art + ' ' : '') + w.de;
     w.idx = i;
   });
+  IRREG.forEach(v => { v.wid = v.inf; });
 
   /* ---------- Хүчтэй/сул үйл үгийн 3 хэлбэр (Verb-Blitz) ---------- */
   const VERBFORMS = VOCAB.filter(w => w.type === 'verb' && !w.prat.includes('/'))
@@ -706,5 +858,5 @@
     { de: 'Für B2: Lies jeden Tag einen kurzen Zeitungsartikel.', mn: 'B2-д: өдөр бүр нэг богино мэдээ унш.' }
   ];
 
-  window.DL_DATA = { VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
+  window.DL_DATA = { IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
 })();

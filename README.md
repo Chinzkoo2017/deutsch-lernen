@@ -22,7 +22,8 @@ usefull-images/     — хичээлийн зургууд (эх сурвалж)
 ## Юу байгаа вэ
 - **Grammatik** — 18 сэдэв (Vergangenheiten, stehen/stellen, N-Deklination, Plural, dass, zu, ob, W-Satz, anstatt, weil/da, obwohl, wenn/als, während, nachdem, bevor, damit/um…zu, so dass/ohne, indem). Сэдэв бүр дүрэм + хүснэгт + дасгалтай.
 - **Übungen** — дасгалын номын Übung 1, 2: монгол өгүүлбэрийг Präsens / Präteritum / Perfekt гурван цагаар бичиж шалгуулна.
-- **Wortschatz** — 109 үг: 3D эргэдэг карт (Лейтнерийн давталт), Quiz, Tippen, Hören.
+- **Starke Verben** — 124 дүрмийн бус үйл үг, эгшгийн загвараар 13 бүлэг: хүснэгт (нууж шалгах горимтой), бүлгээр дуудаж сонсох, 3 хэлбэр бичих дасгал (SRS), карт.
+- **Wortschatz** — 215 үг: 3D эргэдэг карт (Лейтнерийн давталт), Quiz, Tippen, Hören.
 - **Spiele** — Artikel-Regen, Verb-Blitz, haben oder sein?, Satzbau, Memory.
 - **Fehlerheft** — алдсан бүх даалгавар хадгалагдаж, давтана.
 - **Fortschritt** — XP, түвшин, streak, тэмдэг, тохиргоо (дуу хоолой, хурд).

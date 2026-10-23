@@ -300,6 +300,18 @@ table.gt tr:hover td .say { opacity: 1; }
 .result .stars svg { width: 34px; height: 34px; }
 .result .stars svg.off { color: var(--surface-3); }
 
+/* ---------- Starke Verben ---------- */
+table.vt { min-width: 640px; }
+table.vt td.m { color: var(--muted); }
+table.vt .aux-sein { color: var(--gold); font-weight: 600; }
+table.vt tr.playing td { background: rgba(233,194,91,.10); }
+table.vt.hide-forms td.f:not(.rev), table.vt.hide-de td.d:not(.rev) {
+  color: transparent; text-shadow: 0 0 9px rgba(236,235,230,.55); cursor: pointer; user-select: none;
+}
+table.vt.hide-forms td.f:not(.rev) .aux-sein, table.vt.hide-de td.d:not(.rev) .aux-sein { color: transparent; }
+table.vt.hide-de td.d:not(.rev) .lvl-dots { visibility: hidden; }
+table.vt td.rev { background: rgba(103,197,143,.08); }
+
 /* ---------- Vocab ---------- */
 .modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .boxes { display: flex; gap: 6px; height: 60px; align-items: flex-end; }
@@ -499,7 +511,7 @@ select.field { padding: 10px 12px; font-size: 14px; width: auto; max-width: 100%
   .sidebar { display: none; }
   .main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 18px 300px; }
   .bottom-nav {
-    display: grid; grid-template-columns: repeat(6, 1fr);
+    display: grid; grid-template-columns: repeat(7, 1fr);
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
     padding: 8px max(8px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
     background: rgba(13,13,15,.95); border-top: 1px solid var(--line); backdrop-filter: blur(10px);
@@ -532,3 +544,4 @@ select.field { padding: 10px 12px; font-size: 14px; width: auto; max-width: 100%
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+.lesson-head, .topbar { text-shadow: 0 0 6px var(--bg), 0 0 14px var(--bg); }
