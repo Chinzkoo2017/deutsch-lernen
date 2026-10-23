@@ -58,7 +58,9 @@
   const heartSvg = on => `<svg viewBox="0 0 24 24" class="${on ? '' : 'off'}" fill="currentColor" aria-hidden="true"><path d="M12 21s-7-4.4-9.3-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.3 6c-2.3 4.6-9.3 9-9.3 9z"/></svg>`;
 
   /* ---------------- Хадгалалт ---------------- */
-  const KEY = 'deutsch-lernen-v1';
+  const KEY0 = 'deutsch-lernen-v1';
+  let KEY = KEY0;
+  let USER = { id: 'local', name: CFG.userName || 'Lernende' };
   const DEFAULTS = {
     xp: 0, streak: 0, lastDay: null, daily: {}, srs: {}, lessons: {}, workbook: {}, mistakes: [], badges: [], games: {},
     stats: { answered: 0, correct: 0, bestCombo: 0 },
@@ -74,8 +76,14 @@
     } catch (e) { /* хадгалах боломжгүй */ }
     return JSON.parse(JSON.stringify(DEFAULTS));
   }
-  let S = load();
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
+  let S = null;
+  let saveHook = null;
+  function save() {
+    if (!S) return;
+    S.updatedAt = Date.now();
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+    if (saveHook) saveHook(S, { name: USER.name, xp: S.xp, level: levelOf(S.xp), streak: currentStreak(), lastDay: S.lastDay, words: learnedCount(), verbs: D.IRREG.filter(v => ((S.srs[v.wid] || {}).box || 0) >= 3).length });
+  }
 
   /* ---------------- Түвшин ба XP ---------------- */
   const levelOf = xp => Math.floor((1 + Math.sqrt(1 + xp / 12.5)) / 2);
@@ -392,16 +400,18 @@
     { r: 'wortschatz', i: 'cards', t: 'Wortschatz', s: 'Wörter' },
     { r: 'spiele', i: 'game', t: 'Spiele' },
     { r: 'fehler', i: 'alert', t: 'Fehlerheft' },
+    { r: 'klasse', i: 'trophy', t: 'Klasse', s: 'Анги' },
     { r: 'fortschritt', i: 'chart', t: 'Fortschritt', s: 'Profil' }
   ];
   const ASCII_WORDS = {
     home: ['DEUTSCH', 'LERNEN', 'B2'], grammatik: ['GRAMMATIK'], lesson: ['REGEL'], uebungen: ['KURS'], workbook: ['SCHREIBEN'], mix: ['MIX'],
     wortschatz: ['WÖRTER'], karten: ['KARTEN'], quiz: ['QUIZ'], tippen: ['TIPPEN'], hoeren: ['HÖREN'],
     spiele: ['SPIELE'], artikel: ['DER', 'DIE', 'DAS'], verben: ['VERBEN'], habensein: ['HABEN', 'SEIN'], satzbau: ['SATZ'], memory: ['MEMORY'],
-    fehler: ['FEHLER'], fortschritt: ['B2'],
+    fehler: ['FEHLER'], fortschritt: ['B2'], klasse: ['KLASSE'],
     starke: ['STARKE', 'VERBEN'], vgruppe: ['MUSTER'], vdrill: ['STAMM', 'FORMEN']
   };
   let disposers = [];
+  let onDisposeGlobal = null;
   const onDispose = fn => disposers.push(fn);
   let keyHandler = null;
   document.addEventListener('keydown', e => {
@@ -416,7 +426,9 @@
   }
   function go(h) { if (location.hash === '#' + h) render(); else location.hash = h; }
   function render() {
+    if (!S) return;
     disposers.forEach(f => { try { f(); } catch (e) { } }); disposers = [];
+    if (onDisposeGlobal) onDisposeGlobal();
     keyHandler = null;
     if ('speechSynthesis' in window) speechSynthesis.cancel();
     const [r, arg] = parseHash();
@@ -434,7 +446,7 @@
   /* ---------------- Хүрээ (nav, stats) ---------------- */
   function buildChrome() {
     $('#nav').innerHTML = NAV.map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.t}</span>${n.r === 'fehler' ? '<span class="count" id="mcount" hidden></span>' : ''}</a>`).join('');
-    $('#bottom-nav').innerHTML = NAV.filter(n => n.r !== 'fehler').map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.s || n.t}</span></a>`).join('');
+    $('#bottom-nav').innerHTML = NAV.filter(n => n.r !== 'fehler' && n.r !== 'grammatik').map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.s || n.t}</span></a>`).join('');
     $('#t-name').textContent = CFG.teacher.name;
     $('#t-role').textContent = CFG.teacher.role;
     const vb = $('#t-voice'), mb = $('#t-mini');
@@ -457,11 +469,13 @@
     const L = levelOf(S.xp);
     const pct = Math.round(100 * (S.xp - xpForLevel(L)) / (xpForLevel(L + 1) - xpForLevel(L)));
     $('#side-stats').innerHTML = `
+      <div class="row"><span class="user-chip"><b>${esc(USER.name)}</b></span><button class="link-btn" id="side-logout">Гарах</button></div>
       <div class="row"><span>Level ${L}</span><b>${titleOf(L)}</b></div>
       <div class="progress"><i style="width:${pct}%"></i></div>
       <div class="row"><span>XP</span><b>${S.xp}</b></div>
       <div class="row"><span>Streak</span><b>${currentStreak()} өдөр</b></div>
       <div class="row"><span>Өнөөдөр</span><b>${S.daily[today()] || 0}/${CFG.dailyGoalXP}</b></div>`;
+    const lo = $('#side-logout'); if (lo) lo.onclick = () => window.DL_AUTH && window.DL_AUTH.logout();
     const mc = $('#mcount');
     if (mc) { mc.hidden = !S.mistakes.length; mc.textContent = S.mistakes.length; }
     $$('[data-live-xp]').forEach(el => el.textContent = S.xp);
@@ -693,7 +707,7 @@
     input(card, it) {
       card.insertAdjacentHTML('afterbegin', `<div class="label">${esc(it.label || 'Бичиж хариул')}</div>
         <div class="q">${gapify(it.q)}</div>
-        <input class="field" id="ans-${Date.now()}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Хариултаа бич…">
+        <input class="field" id="ans-${Date.now()}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Хариултаа бич…">
         ${umlautBar()}`);
       const f = $('input', card);
       let hintLevel = 0;
@@ -722,49 +736,97 @@
     },
     tiles(card, it) {
       const words = it.answer.split(' ');
-      let order = shuffle(words.map((w, k) => ({ w, k })));
-      if (order.every((o, k) => o.k === k) && words.length > 1) order = order.reverse();
-      card.insertAdjacentHTML('afterbegin', `<div class="label">Үгсийг зөв дараалалд оруул</div>
+      let pool = words.concat(it.distract || []).map(w => ({ w, used: false }));
+      for (let n = 0; n < 5; n++) { pool = shuffle(pool); if (pool.map(p => p.w).join(' ') !== it.answer) break; }
+      let line = []; let done = false;
+      card.insertAdjacentHTML('afterbegin', `<div class="label">${esc(it.label || 'Үгсийг зөв дараалалд оруул')}</div>
         <div class="q q-mn">${esc(it.q)}</div>
+        ${it.sub ? `<div class="pill gold" style="justify-self:start">${esc(it.sub)}</div>` : ''}
         <div class="answer-line" aria-label="Таны өгүүлбэр"></div>
-        <div class="bank"></div>`);
-      const line = $('.answer-line', card), bank = $('.bank', card);
-      const placed = [];
-      order.forEach(o => {
-        const b = document.createElement('button');
-        b.className = 'wtile'; b.textContent = o.w; b.type = 'button';
-        b.addEventListener('click', () => {
-          if (b.classList.contains('used')) return;
-          b.classList.add('used');
-          const t = document.createElement('button');
-          t.className = 'wtile'; t.textContent = o.w; t.type = 'button';
-          placed.push({ o, t, b });
-          t.addEventListener('click', () => {
-            if (R.done) return;
-            const idx = placed.findIndex(p => p.t === t); placed.splice(idx, 1); t.remove(); b.classList.remove('used');
-          });
-          line.appendChild(t);
-        });
-        bank.appendChild(b);
+        <div class="bank"></div>
+        <div class="muted" style="font-size:12.5px">Дарж эсвэл чирж оруулна. Буцаахдаа дээрх үг дээр дар. ${it.distract && it.distract.length ? 'Анхаар: илүү үг байгаа!' : ''}</div>`);
+      const lineEl = $('.answer-line', card), bankEl = $('.bank', card);
+      const draw = () => {
+        lineEl.innerHTML = line.length ? line.map(pi => `<button type="button" class="wtile" data-pi="${pi}" data-in="1">${esc(pool[pi].w)}</button>`).join('') : '<span class="line-ph">Энд үгсээ байрлуул…</span>';
+        bankEl.innerHTML = pool.map((p, pi) => `<button type="button" class="wtile ${p.used ? 'used' : ''}" data-pi="${pi}">${esc(p.w)}</button>`).join('');
+      };
+      const toggle = (pi, inLine) => {
+        if (done) return;
+        if (inLine) { line = line.filter(x => x !== pi); pool[pi].used = false; }
+        else if (!pool[pi].used) { line.push(pi); pool[pi].used = true; }
+        draw();
+      };
+      // Чирж оруулах (хулгана ба хуруу)
+      let drag = null;
+      const insertIndex = (x, y) => {
+        const tiles = $$('.wtile:not(.dragging)', lineEl);
+        let idx = 0;
+        tiles.forEach(t => { const r = t.getBoundingClientRect(); if (r.bottom < y || (r.top <= y && r.left + r.width / 2 < x)) idx++; });
+        return idx;
+      };
+      const overLine = (x, y) => { const r = lineEl.getBoundingClientRect(); return x >= r.left - 10 && x <= r.right + 10 && y >= r.top - 24 && y <= r.bottom + 24; };
+      card.addEventListener('pointerdown', e => {
+        const t = e.target.closest('.wtile');
+        if (!t || done || t.classList.contains('used') || !card.contains(t)) return;
+        drag = { pi: +t.dataset.pi, inLine: !!t.dataset.in, el: t, x0: e.clientX, y0: e.clientY, moving: false, ghost: null, mark: null };
+        t.setPointerCapture(e.pointerId);
       });
-      const R = {
-        keys(e) { if (e.key === 'Backspace' && placed.length) { const p = placed.pop(); p.t.remove(); p.b.classList.remove('used'); } },
+      card.addEventListener('pointermove', e => {
+        if (!drag) return;
+        if (!drag.moving && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 7) return;
+        if (!drag.moving) {
+          drag.moving = true;
+          const r = drag.el.getBoundingClientRect();
+          drag.ghost = drag.el.cloneNode(true); drag.ghost.className = 'wtile ghost';
+          drag.ghost.style.width = r.width + 'px';
+          document.body.appendChild(drag.ghost);
+          drag.el.classList.add('dragging');
+          drag.mark = document.createElement('span'); drag.mark.className = 'drop-mark';
+        }
+        drag.ghost.style.left = (e.clientX - drag.ghost.offsetWidth / 2) + 'px';
+        drag.ghost.style.top = (e.clientY - 22) + 'px';
+        if (overLine(e.clientX, e.clientY)) {
+          const idx = insertIndex(e.clientX, e.clientY);
+          const tiles = $$('.wtile:not(.dragging)', lineEl);
+          const ph = $('.line-ph', lineEl); if (ph) ph.remove();
+          if (tiles[idx]) lineEl.insertBefore(drag.mark, tiles[idx]); else lineEl.appendChild(drag.mark);
+        } else if (drag.mark.parentNode) drag.mark.remove();
+      });
+      const endDrag = e => {
+        if (!drag) return;
+        const d = drag; drag = null;
+        if (!d.moving) { toggle(d.pi, d.inLine); return; }
+        d.ghost.remove();
+        if (overLine(e.clientX, e.clientY)) {
+          const idx = insertIndex(e.clientX, e.clientY);
+          if (d.inLine) line = line.filter(x => x !== d.pi);
+          line.splice(Math.min(idx, line.length), 0, d.pi);
+          pool[d.pi].used = true;
+        } else if (d.inLine) { line = line.filter(x => x !== d.pi); pool[d.pi].used = false; }
+        draw();
+      };
+      card.addEventListener('pointerup', endDrag);
+      card.addEventListener('pointercancel', () => { if (drag && drag.ghost) drag.ghost.remove(); drag = null; draw(); });
+      draw();
+      return {
+        keys(e) { if (e.key === 'Backspace' && line.length && !done) { const pi = line.pop(); pool[pi].used = false; draw(); } },
         check() {
-          if (placed.length < words.length) { line.classList.remove('shake'); toast('Бүх үгийг ашиглаарай'); return null; }
-          R.done = true;
-          const user = placed.map(p => p.o.w).join(' ');
+          if (!line.length) { toast('Үгсээ байрлуулаарай'); return null; }
+          done = true;
+          const user = line.map(pi => pool[pi].w).join(' ');
           const ok = norm(user) === norm(it.answer);
-          return { ok, user, sayAnswer: it.answer, feedbackHTML: ok ? `<div class="ans">${esc(it.answer)}</div>` : `<div class="ans">Зөв: ${esc(it.answer)}</div>` };
+          $$('.wtile', bankEl).forEach(b => b.disabled = true);
+          lineEl.classList.add(ok ? 'ok' : 'bad');
+          return { ok, user, sayAnswer: it.answer, feedbackHTML: ok ? `<div class="ans">${esc(it.answer)} ${sayBtn(it.answer)}</div>` : `<div class="ans diff">Зөв: ${diffHTML(it.answer, user)} ${sayBtn(it.answer)}</div>` };
         }
       };
-      return R;
     },
     write(card, it) {
       const isMn = /[а-яөүё]/i.test(it.prompt);
       card.insertAdjacentHTML('afterbegin', `<div class="label">${esc(it.task)}</div>
         <div class="q ${isMn ? 'q-mn' : ''}">${esc(it.prompt)}</div>
         ${it.hints.length ? `<div class="hints">${it.hints.map(h => { const w = W.find(x => wordLabel(x) === h || x.de === h); return `<button type="button" class="hint-chip" data-hw="${esc(h)}" data-mn="${esc(w ? w.mn : h)}">${esc(w ? w.mn : h)}</button>`; }).join('')}</div>` : ''}
-        <textarea class="field write-field" rows="2" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Герман өгүүлбэрээ бич…"></textarea>
+        <textarea class="field write-field" rows="2" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Герман өгүүлбэрээ бич…"></textarea>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
         const show = !c.classList.contains('revealed');
@@ -802,7 +864,7 @@
         <div class="row-flex" style="gap:10px"><div class="q" style="font-size:clamp(28px,4vw,38px)">${esc(vb.inf)}</div>${sayBtn(vb.inf)}</div>
         <div class="sub-mn" style="margin-top:-12px">${esc(vb.mn)}</div>
         <div class="vhint muted" hidden style="font-size:14px">Загвар: <b>${esc(grp ? grp.p : '')}</b> — ${esc(grp ? grp.mn : '')}</div>
-        <div class="tense-rows">${rows.map(([k, n, ph]) => `<div class="tense-row"><span class="tl">${n}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
+        <div class="tense-rows">${rows.map(([k, n, ph]) => `<div class="tense-row"><span class="tl">${n}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${ph}"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
         ${umlautBar()}`);
       const fields = $$('input[data-t]', card);
       fields.forEach((f, k) => f.addEventListener('keydown', e => {
@@ -834,7 +896,7 @@
       card.insertAdjacentHTML('afterbegin', `<div class="label">Гурван цагаар орчуул</div>
         <div class="q q-mn">${esc(it.mn)}</div>
         <div class="hints">${it.hints.map(h => { const w = W.find(x => wordLabel(x) === h || x.de === h); return `<button type="button" class="hint-chip" data-hw="${esc(h)}" data-mn="${esc(w ? w.mn : '')}">${esc(w ? w.mn : h)}</button>`; }).join('')}</div>
-        <div class="tense-rows">${tenses.map(([k, n]) => `<div class="tense-row"><span class="tl">${n}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${n}…"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
+        <div class="tense-rows">${tenses.map(([k, n]) => `<div class="tense-row"><span class="tl">${n}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${n}…"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
         const show = !c.classList.contains('revealed');
@@ -899,7 +961,7 @@
       <section class="panel hero">
         <div class="greet">
           <div class="label">${greet}</div>
-          <h1 class="h-hero">Hallo, ${esc(CFG.userName)}!</h1>
+          <h1 class="h-hero">Hallo, ${esc(USER.name)}!</h1>
           <p class="sub-mn" style="margin:0">Өнөөдөр B2 руу дахин нэг алхам. Дүрэм, үг, тоглоом — аль нь эхлэх вэ?</p>
           <div class="row-flex" style="margin-top:6px">
             <a class="btn primary" href="#workbook-${nu.u.id}">${icon('arrow')} Үргэлжлүүлэх: ${esc(nu.u.title)} · Kapitel ${nu.c.nr}</a>
@@ -998,6 +1060,34 @@
     runSession($('#mix-host', v), sample(all, 12), { title: 'Холимог', topic: 'Mix', onQuit: () => go('grammatik') });
   };
 
+  /* ---------- Үг байрлуулах дасгал (бичгийн дасгалаас үүсгэнэ) ---------- */
+  const SWAP = { hat: 'ist', ist: 'hat', habe: 'bin', bin: 'habe', haben: 'sind', sind: 'haben', dass: 'ob', ob: 'dass', weil: 'denn', als: 'wenn', wenn: 'als', um: 'damit', damit: 'um', den: 'dem', dem: 'den', der: 'die', die: 'der', das: 'dem', seine: 'ihre', ihre: 'seine', zu: 'um', war: 'hatte', hatte: 'war' };
+  function distractors(answer) {
+    const ws = answer.replace(/[.,!?]/g, '').split(' ');
+    const out = [];
+    ws.forEach(w => { const sw = SWAP[w.toLowerCase()]; if (sw && !ws.map(x => x.toLowerCase()).includes(sw) && !out.includes(sw) && out.length < 2) out.push(/^[A-ZÄÖÜ]/.test(w) ? sw[0].toUpperCase() + sw.slice(1) : sw); });
+    // хүчтэй үйл үгийн буруу Partizip (geschneidet гэх мэт)
+    D.IRREG.forEach(v => {
+      if (out.length >= 3) return;
+      const part = v.perf.split(' ').pop();
+      if (ws.includes(part) && /^ge/.test(part)) { const stem = v.inf.replace(/e?n$/, ''); const wrong = 'ge' + stem + 't'; if (wrong !== part) out.push(wrong); }
+    });
+    return out.slice(0, 3);
+  }
+  function tilesFromItems(items) {
+    const TN = { p: 'Präsens', pr: 'Präteritum', pf: 'Perfekt' };
+    const out = [];
+    items.forEach(it => {
+      if (it.type === 'tense3') {
+        const k = pick(['p', 'pr', 'pf']);
+        out.push({ type: 'tiles', q: it.mn, sub: TN[k], answer: it[k][0], distract: distractors(it[k][0]) });
+      } else if (it.type === 'write') {
+        out.push({ type: 'tiles', q: it.prompt, sub: it.task, label: /[а-яөүё]/i.test(it.prompt) ? 'Герман өгүүлбэрийг үгсээс угсар' : 'Нийлүүлсэн өгүүлбэрийг угсар', answer: it.answers[0], distract: distractors(it.answers[0]) });
+      } else if (it.type === 'tiles') out.push(it);
+    });
+    return out;
+  }
+
   /* ---------- Курс (Inhaltsverzeichnis-ийн дарааллаар) ---------- */
   const WB = id => D.WORKBOOK.find(u => u.id === id);
   const courseOrder = () => D.COURSE.flatMap(c => c.ues.map(id => ({ u: WB(id), c })));
@@ -1021,7 +1111,7 @@
       <section class="panel" style="display:grid;gap:14px">
         <div class="row-flex" style="justify-content:space-between;align-items:flex-end">
           <div style="display:grid;gap:4px"><div class="label">Курсийн явц</div><div class="h-hero" style="font-size:40px">${cp.done}<span class="muted" style="font-size:18px;font-weight:500"> / ${cp.total} Übung</span></div></div>
-          <a class="btn gold" href="#workbook-${nx.u.id}">${icon('pencil')} Дараагийн: ${esc(nx.u.title)} · ${esc(nx.u.page)}</a>
+          <div class="row-flex"><a class="btn gold" href="#workbook-${nx.u.id}">${icon('pencil')} Дараагийн: ${esc(nx.u.title)} · ${esc(nx.u.page)}</a><a class="btn" href="#workbook-${nx.u.id}~tiles">${icon('puzzle')} Үг байрлуулах</a></div>
         </div>
         <div class="progress ok"><i style="width:${Math.round(100 * cp.done / cp.total)}%"></i></div>
         <p class="muted" style="margin:0;font-size:13px"><span class="pill gold">номоос</span> — дасгалын номын яг өгүүлбэр. <span class="pill">зохиосон</span> — тухайн сэдэв ба хичээлийн үйл үгээр зохиосон дасгал. Номын хуудсыг зураг авч өгвөл жинхэнэ дасгалаар сольж болно.</p>
@@ -1046,17 +1136,21 @@
     const u = WB(id);
     if (!u) return VIEWS.uebungen(v);
     const chap = D.COURSE.find(c => c.ues.includes(id));
-    const items = n ? sample(u.items, Number(n)) : u.items.slice();
+    const tilesMode = n === 'tiles';
+    let items = n && !tilesMode ? sample(u.items, Number(n)) : u.items.slice();
+    if (tilesMode) items = tilesFromItems(items);
     const nxt = afterUebung(id);
     v.innerHTML = `${topbar((chap ? 'Kapitel ' + chap.nr + ' · ' : '') + u.title + ' · ' + u.page, 'uebungen')}
       <div class="lesson-head">
         <div class="row-flex"><span class="pill ${u.made ? '' : 'gold'}">${u.made ? 'зохиосон дасгал' : 'номын дасгал'}</span>${chap ? `<a class="pill" href="#lesson-${chap.lesson}" style="text-decoration:none">${icon('book')} ${esc(chap.title)}</a>` : ''}</div>
-        <h1 class="h-hero">${esc(u.title)}</h1><p class="sub-mn" style="margin:0">${esc(u.mn)}</p></div><div id="wb-host"></div>`;
+        <h1 class="h-hero">${esc(u.title)}</h1><p class="sub-mn" style="margin:0">${esc(u.mn)}</p>
+        <div class="seg" style="justify-self:start"><a class="${tilesMode ? '' : 'on'}" href="#workbook-${id}">${icon('pencil')} Бичих</a><a class="${tilesMode ? 'on' : ''}" href="#workbook-${id}~tiles">${icon('puzzle')} Үг байрлуулах</a></div></div><div id="wb-host"></div>`;
+    if (tilesMode && !items.length) { $('#wb-host', v).innerHTML = `<div class="panel empty">Энэ дасгалд үг байрлуулах хувилбар алга. Бичих горимоор хийгээрэй.</div>`; return; }
     teacherSay('Schreiben, schreiben, schreiben! Los geht es!', 'Бич, бич, бич! Эхэлцгээе!', 'wave', false);
     runSession($('#wb-host', v), items, {
       title: u.title, topic: u.title,
       next: nxt ? { href: 'workbook-' + nxt.u.id, label: 'Дараагийн: ' + nxt.u.title } : null,
-      onFinish: pct => { const r = S.workbook[u.id] || {}; r.best = Math.max(r.best || 0, pct); if (!n) r.full = true; S.workbook[u.id] = r; save(); checkBadges(); },
+      onFinish: pct => { if (tilesMode) { save(); return; } const r = S.workbook[u.id] || {}; r.best = Math.max(r.best || 0, pct); if (!n) r.full = true; S.workbook[u.id] = r; save(); checkBadges(); },
       onQuit: () => go('uebungen')
     });
   };
@@ -1649,10 +1743,14 @@
           <div class="setting"><div><b>Багшийн дуу хоолой</b><div class="muted" style="font-size:13px">Багш хариултыг герман хэлээр чангаар уншина</div></div><button class="switch ${S.settings.voice ? 'on' : ''}" id="sv" aria-label="Багшийн дуу"></button></div>
           <div class="setting"><div><b>Унших хурд</b><div class="muted" style="font-size:13px" id="rv">${S.settings.rate.toFixed(2)}×</div></div><input type="range" id="sr" min="0.6" max="1.2" step="0.02" value="${S.settings.rate}"></div>
           <div class="setting"><div><b>Герман хоолой</b><div class="muted" style="font-size:13px">Компьютерт суусан de-DE хоолойнууд</div></div><select class="field" id="sel-voice"></select></div>
+          <div class="setting"><div><b>Дэлгэцийн герман гар</b><div class="muted" style="font-size:13px">Утасны гарын «санал болгох үг», автомат засварыг бүрэн хаана. QWERTZ + ä ö ü ß</div></div><button class="switch ${kbEnabled() ? 'on' : ''}" id="skb" aria-label="Дэлгэцийн гар"></button></div>
+          <div class="setting"><div><b>Бүртгэл</b><div class="muted" style="font-size:13px">${esc(USER.name)}${USER.email ? ' · ' + esc(USER.email) : ''} · ${window.DL_AUTH && window.DL_AUTH.mode === 'cloud' ? 'үүлэнд хадгалагдана' : 'энэ төхөөрөмж дээр'}</div></div><button class="btn small ghost" id="logout">Гарах</button></div>
           <div class="setting"><div><b>Ахицыг тэглэх</b><div class="muted" style="font-size:13px">XP, үг, рекорд бүгд устана</div></div><button class="btn small ghost" id="reset">Тэглэх</button></div>
         </div>
       </section>`;
     $('#sv', v).addEventListener('click', e => { S.settings.voice = !S.settings.voice; save(); e.currentTarget.classList.toggle('on', S.settings.voice); buildToolsSync(); });
+    $('#skb', v).addEventListener('click', e => { S.settings.kb = !kbEnabled(); save(); e.currentTarget.classList.toggle('on', S.settings.kb); });
+    $('#logout', v).addEventListener('click', () => window.DL_AUTH && window.DL_AUTH.logout());
     $('#sr', v).addEventListener('input', e => { S.settings.rate = Number(e.target.value); $('#rv', v).textContent = S.settings.rate.toFixed(2) + '×'; save(); });
     $('#sr', v).addEventListener('change', () => speak('Guten Tag! Ich bin deine Lehrerin.'));
     const sel = $('#sel-voice', v);
@@ -1675,12 +1773,111 @@
     vb.classList.toggle('on', S.settings.voice);
   }
 
-  /* ---------------- Эхлүүлэх ---------------- */
-  buildChrome();
-  render();
-  setTimeout(() => {
-    const hr = new Date().getHours();
-    const g = hr < 11 ? 'Guten Morgen' : hr < 18 ? 'Guten Tag' : 'Guten Abend';
-    teacherSay(`${g}, ${CFG.userName}! Bereit?`, 'Өнөөдөр юу сурах вэ? Над дээр дарвал зөвлөгөө өгнө.', 'wave', false);
-  }, 900);
+  /* ---------- Анги (жагсаалт) ---------- */
+  VIEWS.klasse = function (v) {
+    v.innerHTML = `${topbar('Klasse')}
+      <div class="lesson-head"><h1 class="h-hero">Klasse</h1><p class="sub-mn" style="margin:0">Ангийнхны XP, streak, цээжилсэн үг. Хамтдаа өрсөлдөөд B2 руу!</p></div>
+      <section class="panel tight" id="lb"><div class="empty">Ачаалж байна…</div></section>`;
+    const host = $('#lb', v);
+    const A = window.DL_AUTH;
+    if (!A) { host.innerHTML = `<div class="empty">Бүртгэлийн систем ачаалагдсангүй.</div>`; return; }
+    A.leaderboard().then(rows => {
+      if (!host.isConnected) return;
+      if (!rows.length) { host.innerHTML = `<div class="empty">Одоогоор хэн ч алга.</div>`; return; }
+      host.innerHTML = `${A.mode !== 'cloud' ? `<p class="muted" style="margin:6px 8px 14px;font-size:13px">Энэ төхөөрөмж дээр бүртгүүлсэн хүмүүс л харагдана. Ангийнхан бүгд нэг жагсаалтад харагдахын тулд үүлэн бүртгэл (Firebase) тохируулна — README-д заавар бий.</p>` : ''}
+        <div class="lb">${rows.map((r, k) => `<div class="lb-row ${r.id === USER.id ? 'me' : ''}">
+          <span class="lb-rank mono">${k + 1}</span>
+          <span class="lb-name"><b>${esc(r.name || '—')}</b><span class="muted">Level ${levelOf(r.xp || 0)} · ${titleOf(levelOf(r.xp || 0))}</span></span>
+          <span class="lb-stat" title="Streak">${icon('flame')} ${r.streak || 0}</span>
+          <span class="lb-stat" title="Цээжилсэн үг">${icon('cards')} ${r.words || 0}</span>
+          <span class="lb-xp mono">${r.xp || 0} XP</span></div>`).join('')}</div>`;
+    }).catch(err => { host.innerHTML = `<div class="empty">Жагсаалт ачаалж чадсангүй: ${esc(err.message || err)}</div>`; });
+  };
+
+  /* ---------------- Дэлгэцийн герман гар ----------------
+     Утасны системийн гарыг (санал болгох үг, автомат засвартай)
+     огт гаргахгүйн тулд inputmode="none" болгож, өөрийн гарыг харуулна. */
+  function kbEnabled() { return S && S.settings.kb != null ? S.settings.kb : matchMedia('(pointer: coarse)').matches; }
+  const KB = (function () {
+    const L = {
+      abc: [['q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p', 'ü'], ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ö', 'ä'], ['⇧', 'y', 'x', 'c', 'v', 'b', 'n', 'm', 'ß', '⌫'], ['123', ',', ' ', '.', '⏎']],
+      num: [['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], ['-', '/', ':', ';', '(', ')', '„', '“', '!', '?'], ['abc', '"', "'", '–', '…', '⌫'], ['abc', ',', ' ', '.', '⏎']]
+    };
+    const el = document.createElement('div');
+    el.className = 'kb'; el.id = 'dl-kb'; el.hidden = true; el.setAttribute('aria-label', 'Герман гар');
+    document.body.appendChild(el);
+    let layout = 'abc', shift = false, target = null;
+    function draw() {
+      el.innerHTML = `<div class="kb-top"><span class="muted">Герман гар</span><button type="button" class="kb-sys" data-k="sys">Системийн гар</button><button type="button" class="kb-sys" data-k="hide">Хаах</button></div>` +
+        L[layout].map(r => `<div class="kb-row">${r.map(k => `<button type="button" class="kb-key ${k === ' ' ? 'space' : ''} ${['⇧', '⌫', '123', 'abc', '⏎'].includes(k) ? 'fn' : ''} ${k === '⇧' && shift ? 'on' : ''}" data-k="${esc(k)}">${k === ' ' ? 'Leerzeichen' : esc(shift && k.length === 1 && layout === 'abc' ? (k === 'ß' ? 'ẞ' : k.toUpperCase()) : k)}</button>`).join('')}</div>`).join('');
+    }
+    function insert(text) {
+      if (!target) return;
+      const f = target, a = f.selectionStart ?? f.value.length, b = f.selectionEnd ?? f.value.length;
+      f.value = f.value.slice(0, a) + text + f.value.slice(b);
+      f.setSelectionRange(a + text.length, a + text.length);
+      f.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    el.addEventListener('pointerdown', e => e.preventDefault());
+    el.addEventListener('click', e => {
+      const b = e.target.closest('[data-k]'); if (!b || !target) return;
+      const k = b.dataset.k;
+      if (k === 'hide') { target.blur(); hide(); return; }
+      if (k === 'sys') { S.settings.kb = false; save(); const t = target; hide(); t.removeAttribute('inputmode'); t.blur(); setTimeout(() => t.focus(), 50); toast('Системийн гар руу шилжлээ (Тохиргооноос буцааж асаана)'); return; }
+      if (k === '⇧') { shift = !shift; draw(); return; }
+      if (k === '123') { layout = 'num'; draw(); return; }
+      if (k === 'abc') { layout = 'abc'; draw(); return; }
+      if (k === '⌫') {
+        const f = target, a = f.selectionStart ?? f.value.length, z = f.selectionEnd ?? f.value.length;
+        if (a !== z) { f.value = f.value.slice(0, a) + f.value.slice(z); f.setSelectionRange(a, a); }
+        else if (a > 0) { f.value = f.value.slice(0, a - 1) + f.value.slice(a); f.setSelectionRange(a - 1, a - 1); }
+        return;
+      }
+      if (k === '⏎') { target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); return; }
+      let ch = k;
+      if (shift && layout === 'abc' && k.length === 1) { ch = k === 'ß' ? 'ẞ' : k.toUpperCase(); shift = false; draw(); }
+      insert(ch);
+      if (/[.!?]/.test(ch)) { shift = true; draw(); }
+    });
+    function show(f) {
+      target = f; layout = 'abc';
+      shift = !f.value.trim();
+      draw(); el.hidden = false; document.body.classList.add('kb-open');
+      setTimeout(() => f.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60);
+    }
+    function hide() { el.hidden = true; target = null; document.body.classList.remove('kb-open'); }
+    const isField = t => t && t.matches && t.matches('input.field:not([data-nokb]), textarea.field:not([data-nokb])') && !t.readOnly;
+    document.addEventListener('pointerdown', e => { if (isField(e.target) && kbEnabled()) e.target.setAttribute('inputmode', 'none'); }, true);
+    document.addEventListener('focusin', e => {
+      if (isField(e.target) && kbEnabled()) { e.target.setAttribute('inputmode', 'none'); show(e.target); }
+      else if (!el.contains(e.target)) hide();
+    });
+    document.addEventListener('focusout', () => setTimeout(() => { const a = document.activeElement; if (!isField(a) && !el.contains(a)) hide(); }, 120));
+    return { hide };
+  })();
+  onDisposeGlobal = () => KB.hide();
+
+  /* ---------------- Эхлүүлэх (нэвтэрсний дараа) ---------------- */
+  window.DL_boot = function (user) {
+    USER = user;
+    KEY = KEY0 + ':' + user.id;
+    // Анхны (бүртгэлгүй үеийн) ахицыг эхний бүртгэлд шилжүүлнэ
+    try {
+      if (!localStorage.getItem(KEY) && localStorage.getItem(KEY0) && !localStorage.getItem('dl-migrated')) {
+        localStorage.setItem(KEY, localStorage.getItem(KEY0)); localStorage.setItem('dl-migrated', user.id);
+      }
+    } catch (e) { }
+    const local = load();
+    const remote = user.state ? Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), user.state, { stats: Object.assign({}, DEFAULTS.stats, user.state.stats), settings: Object.assign({}, DEFAULTS.settings, user.state.settings) }) : null;
+    S = remote && (remote.updatedAt || 0) >= (local.updatedAt || 0) ? remote : local;
+    saveHook = user.onSave || null;
+    buildChrome();
+    render();
+    save();
+    setTimeout(() => {
+      const hr = new Date().getHours();
+      const g = hr < 11 ? 'Guten Morgen' : hr < 18 ? 'Guten Tag' : 'Guten Abend';
+      teacherSay(`${g}, ${user.name}! Bereit?`, 'Өнөөдөр юу сурах вэ? Над дээр дарвал зөвлөгөө өгнө.', 'wave', false);
+    }, 900);
+  };
 })();

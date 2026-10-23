@@ -52,3 +52,36 @@ T('Монгол өгүүлбэр', ['үг', 'сануулга'], 'Präsens', 'Pr
 Зөв хариулт дараалах тусам: баярлана → алга ташина → үсэрч эргэлдэнэ (алтан оч цацарна).
 Буруу хариулт дараалах тусам: загнана / нүүрээ таглана (дээр нь аадар үүл) → бурханд залбирна (гэгээн туяа) → «Яагаад?!» гэж цөхөрнө.
 Хэллэгүүд нь `js/data.js` доторх `PRAISE_BIG`, `SCOLD`-д — багшийнхаа жинхэнэ үгсээр сольж болно.
+
+## Бүртгэл (ангийнхан тус бүр өөрийн бүртгэлтэй)
+Сайт нээгдэхэд нэвтрэх цонх гарна: **Нэр, Имэйл, Нууц үг**-ээр бүртгүүлнэ. Хүн бүрийн ахиц (XP, карт, алдаа, рекорд) тусдаа.
+
+- `js/config.js` дотор `firebase: null` байхад бүртгэл **зөвхөн тухайн төхөөрөмж дээр** хадгалагдана.
+- Ангийнхан **аль ч төхөөрөмжөөс** нэвтэрч, «Klasse» жагсаалтад бүгд харагдахын тулд Firebase (үнэгүй) тохируулна:
+
+1. https://console.firebase.google.com → **Add project** → нэр: `deutsch-lernen` (Analytics хэрэггүй).
+2. **Build → Authentication → Get started → Sign-in method → Email/Password → Enable → Save**.
+3. **Authentication → Settings → Authorized domains → Add domain** → `chinzkoo2017.github.io`.
+4. **Build → Firestore Database → Create database** → байршил `eur3 (europe-west)` → *Production mode*.
+5. **Firestore → Rules** таб дээр доорхыг хуулж **Publish**:
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{db}/documents {
+       match /users/{uid} {
+         allow read: if request.auth != null;
+         allow write: if request.auth != null && request.auth.uid == uid;
+       }
+       match /progress/{uid} {
+         allow read, write: if request.auth != null && request.auth.uid == uid;
+       }
+     }
+   }
+   ```
+6. **Project settings (⚙) → Your apps → Web (</>)** → апп нэр өгөөд бүртгэнэ → гарч ирсэн `firebaseConfig`-ийг хуулна.
+7. `js/config.js`-д `firebase: { apiKey: '…', authDomain: '…', projectId: '…', appId: '…' },` гэж тавина (эсвэл Claude-д явуулбал тавиад push хийнэ).
+
+`users` цуглуулгад зөвхөн нэр, XP, streak, цээжилсэн үгийн тоо хадгалагдана — имэйл бусдад харагдахгүй. Нууц үгийг Firebase өөрөө хамгаална.
+
+## Утасны гар
+Утсан дээр бичих талбарт дарахад **дэлгэцийн герман гар** (QWERTZ + ä ö ü ß) гарна — системийн гар, түүний «санал болгох үг», автомат засвар огт гарахгүй. Хүсвэл гар дээрх «Системийн гар» эсвэл Profil → Тохиргооноос сольж болно.

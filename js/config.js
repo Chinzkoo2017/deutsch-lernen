@@ -6,6 +6,20 @@ window.APP_CONFIG = {
   userName: 'Chinzorig',
   dailyGoalXP: 120,          // өдрийн зорилго (XP)
 
+  /* ---- Үүлэн бүртгэл (Firebase) ----
+     null бол бүртгэл зөвхөн тухайн төхөөрөмж дээр хадгалагдана.
+     Firebase төсөл үүсгээд (README-ийн заавар) доорх объектыг
+     Firebase Console → Project settings → Your apps → Config-оос хуулж тавина:
+     firebase: {
+       apiKey: '...',
+       authDomain: 'xxx.firebaseapp.com',
+       projectId: 'xxx',
+       appId: '...'
+     },
+     Энэ түлхүүрүүд нийтэд харагдах зориулалттай — нууц биш. Хамгаалалт нь
+     Firestore Rules-ээр хийгдэнэ. */
+  firebase: null,
+
   teacher: {
     name: 'Frau Sonne',
     role: 'Deutschlehrerin',
