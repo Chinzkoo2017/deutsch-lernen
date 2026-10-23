@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deutsch Lernen</title>
+<meta name="description" content="Герман хэлний B1–B2 дүрэм, үгсийн сан, дасгал, тоглоом — 3D багштай.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<!-- Three.js (3D багш) -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<!--APP-START-->
+<canvas id="ascii-bg" aria-hidden="true"></canvas>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Цэс">
+    <div class="brand">
+      <div class="brand-mark"><div class="flag"><i></i><i></i><i></i></div></div>
+      <div class="brand-text"><b>Deutsch Lernen</b><span>B1 → B2</span></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-stats" id="side-stats"></div>
+  </aside>
+
+  <main class="main">
+    <div class="main-inner" id="view"></div>
+  </main>
+
+  <aside class="teacher-col" id="teacher-col" aria-label="Багш">
+    <div class="teacher">
+      <div class="teacher-stage" id="teacher-stage" title="Багш дээр дарвал зөвлөгөө өгнө">
+        <div class="teacher-tools">
+          <button class="icon-btn" id="t-voice" title="Багшийн дуу хоолой" aria-label="Багшийн дуу хоолой асаах/унтраах"></button>
+          <button class="icon-btn" id="t-mini" title="Багшийг жижигрүүлэх" aria-label="Багшийг жижигрүүлэх"></button>
+        </div>
+        <div class="teacher-name"><b id="t-name">Frau Sonne</b><span id="t-role">Deutschlehrerin</span></div>
+      </div>
+      <div class="bubble" id="bubble" aria-live="polite"><div class="bde">Hallo!</div><div class="bmn">Сайн уу!</div></div>
+      <div class="teacher-help">Товчлол: <kbd>Enter</kbd> шалгах / дараах, <kbd>1</kbd>–<kbd>4</kbd> сонголт, <kbd>Space</kbd> карт эргүүлэх.</div>
+    </div>
+  </aside>
+</div>
+
+<nav class="bottom-nav" id="bottom-nav" aria-label="Цэс"></nav>
+<div class="toasts" id="toasts"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<!--APP-END-->
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/teacher.js"></script>
+</body>
+</html>
