@@ -188,7 +188,8 @@
     const b = $('#bubble');
     if (!b) return;
     const nb = b.cloneNode(false);
-    nb.className = 'bubble' + (mood === 'happy' ? ' mood-happy' : mood === 'sad' ? ' mood-sad' : '');
+    const HAPPY = ['happy', 'clap', 'cheer'], SAD = ['sad', 'scold', 'pray', 'facepalm', 'despair'];
+    nb.className = 'bubble' + (HAPPY.includes(mood) ? ' mood-happy' : SAD.includes(mood) ? ' mood-sad' : '') + (mood === 'pray' ? ' mood-pray' : '');
     nb.innerHTML = `<div class="bde">${esc(de)}</div>${mn ? `<div class="bmn">${esc(mn)}</div>` : ''}`;
     b.replaceWith(nb);
     if (mood && mood !== 'talk') T()?.react(mood);
@@ -199,6 +200,26 @@
     bubbleTimer = setTimeout(() => { const cur = $('#bubble'); if (cur) cur.classList.add('quiet'); }, 7000);
   }
   window.DL_teacherSay = teacherSay;
+
+  /* Багшийн сэтгэл хөдлөл: дараалсан зөв → улам их баярлана,
+     дараалсан буруу → загнана → бурхадад залбирна → цөхөрнө */
+  let okRun = 0, badRun = 0;
+  function teacherReact(ok, answerText) {
+    if (ok) {
+      okRun++; badRun = 0;
+      const mood = okRun >= 5 ? 'cheer' : okRun >= 3 ? 'clap' : 'happy';
+      const p = okRun >= 5 ? pick(D.PRAISE_BIG) : okRun >= 3 ? pick(D.PRAISE_BIG.concat(D.PRAISE)) : pick(D.PRAISE);
+      teacherSay(p.de, okRun >= 3 ? `${p.mn} (дараалан ${okRun} зөв!)` : p.mn, mood, false);
+      if (S.settings.voice) speak(okRun >= 3 || !answerText ? p.de : answerText);
+    } else {
+      badRun++; okRun = 0;
+      const lvl = Math.min(3, badRun);
+      const mood = lvl === 1 ? pick(['scold', 'facepalm']) : lvl === 2 ? 'pray' : pick(['despair', 'pray']);
+      const p = pick(D.SCOLD[lvl]);
+      teacherSay(p.de, p.mn, mood, false);
+      if (S.settings.voice) speak(p.de, { onend: () => { if (answerText) setTimeout(() => speak(answerText), 250); } });
+    }
+  }
 
   /* ---------------- Toast / confetti ---------------- */
   function toast(msg) {
@@ -367,14 +388,14 @@
     { r: 'home', i: 'home', t: 'Start' },
     { r: 'grammatik', i: 'book', t: 'Grammatik', s: 'Regeln' },
     { r: 'starke', i: 'bolt', t: 'Starke Verben', s: 'Verben' },
-    { r: 'uebungen', i: 'pencil', t: 'Übungen', s: 'Übung' },
+    { r: 'uebungen', i: 'pencil', t: 'Kurs · Übungen', s: 'Kurs' },
     { r: 'wortschatz', i: 'cards', t: 'Wortschatz', s: 'Wörter' },
     { r: 'spiele', i: 'game', t: 'Spiele' },
     { r: 'fehler', i: 'alert', t: 'Fehlerheft' },
     { r: 'fortschritt', i: 'chart', t: 'Fortschritt', s: 'Profil' }
   ];
   const ASCII_WORDS = {
-    home: ['DEUTSCH', 'LERNEN', 'B2'], grammatik: ['GRAMMATIK'], lesson: ['REGEL'], uebungen: ['ÜBUNG'], workbook: ['ÜBUNG'], mix: ['MIX'],
+    home: ['DEUTSCH', 'LERNEN', 'B2'], grammatik: ['GRAMMATIK'], lesson: ['REGEL'], uebungen: ['KURS'], workbook: ['SCHREIBEN'], mix: ['MIX'],
     wortschatz: ['WÖRTER'], karten: ['KARTEN'], quiz: ['QUIZ'], tippen: ['TIPPEN'], hoeren: ['HÖREN'],
     spiele: ['SPIELE'], artikel: ['DER', 'DIE', 'DAS'], verben: ['VERBEN'], habensein: ['HABEN', 'SEIN'], satzbau: ['SATZ'], memory: ['MEMORY'],
     fehler: ['FEHLER'], fortschritt: ['B2'],
@@ -543,21 +564,29 @@
       opts.onAnswer && opts.onAnswer(it, res.ok);
       save(); setProgress();
       // Багшийн хариу
-      if (res.ok) {
-        const p = combo > 0 && combo % 5 === 0 ? { de: `${combo} richtig hintereinander!`, mn: `Дараалан ${combo} зөв!` } : pick(D.PRAISE);
-        teacherSay(p.de, p.mn, 'happy', false);
-        if (S.settings.voice) speak(res.sayAnswer || p.de);
-      } else {
-        const c = pick(D.CONSOLE);
-        teacherSay(c.de, c.mn, 'sad', false);
-        if (S.settings.voice && res.sayAnswer) setTimeout(() => speak(res.sayAnswer), 350);
-      }
+      teacherReact(res.ok, res.sayAnswer);
       const fb = document.createElement('div');
       fb.className = 'feedback ' + (res.ok ? 'ok' : 'bad');
       fb.innerHTML = `<div class="fh">${icon(res.ok ? 'check' : 'x')} ${res.ok ? (res.typo ? 'Зөв! Бичлэгээ анхаараарай' : pick(['Зөв!', 'Яг зөв!', 'Сайн байна!'])) : (frac > 0 ? `Хагас зөв (${res.parts ? res.parts.join('/') : Math.round(frac * 3) + '/3'})` : 'Буруу')}</div>
         ${res.feedbackHTML || ''}
         ${it.explain ? `<div class="ex">${esc(it.explain)}</div>` : ''}`;
       card.insertBefore(fb, actions);
+      if (!res.ok && res.allowOverride) {
+        const ob = document.createElement('button');
+        ob.className = 'btn small ghost'; ob.style.justifySelf = 'start';
+        ob.textContent = 'Миний хариулт ч зөв — тооцох';
+        ob.addEventListener('click', () => {
+          ob.remove();
+          score += 1 - frac; S.stats.correct++;
+          removeMistake(it); wrongItems = wrongItems.filter(x => x !== it);
+          fb.className = 'feedback ok';
+          $('.fh', fb).innerHTML = `${icon('check')} Зөвд тооцлоо`;
+          addXP(6, card); save();
+          okRun = 0; badRun = 0;
+          teacherSay('Na gut, das lasse ich gelten!', 'За за, үүнийг зөвд тооцъё!', 'happy', true);
+        });
+        fb.appendChild(ob);
+      }
       actions.innerHTML = `<span class="kbd-hint">Enter — дараах</span><button class="btn primary" data-next>${i + 1 >= total ? 'Дуусгах' : 'Дараах'} ${icon('arrow')}</button>`;
       $('[data-next]', actions).addEventListener('click', nextQ);
       if (matchMedia('(pointer:fine)').matches) $('[data-next]', actions).focus({ preventScroll: true });
@@ -580,6 +609,7 @@
         <div class="row-flex" style="justify-content:center">
           <button class="btn primary" data-again>${icon('refresh')} Дахин</button>
           ${wrongItems.length ? `<button class="btn" data-wrong>${icon('alert')} Алдсанаа давтах (${wrongItems.length})</button>` : ''}
+          ${opts.next ? `<a class="btn gold" href="#${opts.next.href}">${esc(opts.next.label)} ${icon('arrow')}</a>` : ''}
           <button class="btn ghost" data-done>Буцах</button>
         </div></div>`;
       $('[data-again]', host).addEventListener('click', () => runSession(host, opts.reshuffle ? shuffle(items) : items, opts));
@@ -595,7 +625,7 @@
   function umlautBar() {
     return `<div class="umlauts" aria-label="Тусгай үсэг">${['ä', 'ö', 'ü', 'ß', 'Ä', 'Ö', 'Ü'].map(c => `<button type="button" data-uml="${c}">${c}</button>`).join('')}</div>`;
   }
-  document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('input.field')) lastField = e.target; });
+  document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('input.field, textarea.field')) lastField = e.target; });
   document.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('[data-uml]')) e.preventDefault(); });
   document.addEventListener('click', e => {
     const u = e.target.closest && e.target.closest('[data-uml]');
@@ -729,6 +759,41 @@
       };
       return R;
     },
+    write(card, it) {
+      const isMn = /[а-яөүё]/i.test(it.prompt);
+      card.insertAdjacentHTML('afterbegin', `<div class="label">${esc(it.task)}</div>
+        <div class="q ${isMn ? 'q-mn' : ''}">${esc(it.prompt)}</div>
+        ${it.hints.length ? `<div class="hints">${it.hints.map(h => { const w = W.find(x => wordLabel(x) === h || x.de === h); return `<button type="button" class="hint-chip" data-hw="${esc(h)}" data-mn="${esc(w ? w.mn : h)}">${esc(w ? w.mn : h)}</button>`; }).join('')}</div>` : ''}
+        <textarea class="field write-field" rows="2" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Герман өгүүлбэрээ бич…"></textarea>
+        ${umlautBar()}`);
+      $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
+        const show = !c.classList.contains('revealed');
+        c.classList.toggle('revealed', show);
+        c.textContent = show ? c.dataset.hw : c.dataset.mn;
+        if (show) speak(c.dataset.hw);
+      }));
+      const f = $('textarea', card);
+      let words = 0;
+      return {
+        hint() {
+          const a = it.answers[0].split(' ');
+          words = Math.min(a.length - 1, words + 2);
+          f.placeholder = a.slice(0, words).join(' ') + ' …';
+          f.focus();
+        },
+        check() {
+          if (!f.value.trim()) { f.focus(); return null; }
+          const r = judge(f.value, it.answers);
+          f.readOnly = true; f.classList.add(r.ok ? 'ok' : 'bad');
+          const others = it.answers.filter(a => a !== r.expected);
+          return {
+            ok: r.ok, typo: r.typo, user: f.value, sayAnswer: r.expected, allowOverride: true,
+            feedbackHTML: (r.ok && !r.typo ? '' : `<div class="ans diff">${r.ok ? 'Зөв бичлэг: ' : 'Жишиг хариулт: '}${diffHTML(r.expected, f.value)} ${sayBtn(r.expected)}</div>`)
+              + (!r.ok && others.length ? `<div class="ex">Өөр зөв хувилбар: ${others.slice(0, 2).map(esc).join(' · ')}</div>` : '')
+          };
+        }
+      };
+    },
     vforms(card, it) {
       const vb = it.v;
       const grp = D.IRREG_GROUPS.find(g => g.k === vb.g);
@@ -759,7 +824,7 @@
           return {
             ok: good === 3, frac: good / 3, parts: [good, 3],
             sayAnswer: `${vb.inf}. ${vb.prat}. ${vb.perf}.`,
-            feedbackHTML: `<div class="ans">${esc(vb.inf)} – ${esc(vb.er)} – ${esc(vb.prat)} – ${esc(vb.perf)} ${sayBtn(`${vb.inf}. ${vb.er}. ${vb.prat}. ${vb.perf}.`)}</div>`
+            feedbackHTML: `<div class="ans">${esc(vb.inf)} – ${esc(vb.er)} – ${esc(vb.prat)} – ${esc(vb.perf)} ${sayBtn(`${vb.inf}. ${vb.er}. ${vb.prat}. ${vb.perf}.`)}</div>${vb.mnemo ? `<div class="ex">Санах: ${esc(vb.mnemo)}</div>` : ''}`
           };
         }
       };
@@ -824,8 +889,7 @@
     const C = 2 * Math.PI * 54, off = C * (1 - Math.min(1, done / goal));
     const L = levelOf(S.xp);
     const due = dueWords().length, fresh = newWords().length;
-    const next = D.LESSONS.find(l => !((S.lessons[l.id] || {}).best >= 80)) || D.LESSONS[0];
-    const ue = S.workbook.ue1 || {};
+    const nu = nextUebung(), cp = courseProgress();
     const days = Array.from({ length: 7 }, (_, k) => addDays(t, k - 6));
     const max = Math.max(goal, ...days.map(d => S.daily[d] || 0));
     const wd = ['Ня', 'Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бя'];
@@ -838,7 +902,7 @@
           <h1 class="h-hero">Hallo, ${esc(CFG.userName)}!</h1>
           <p class="sub-mn" style="margin:0">Өнөөдөр B2 руу дахин нэг алхам. Дүрэм, үг, тоглоом — аль нь эхлэх вэ?</p>
           <div class="row-flex" style="margin-top:6px">
-            <a class="btn primary" href="#lesson-${next.id}">${icon('arrow')} Үргэлжлүүлэх: ${esc(next.title)}</a>
+            <a class="btn primary" href="#workbook-${nu.u.id}">${icon('arrow')} Үргэлжлүүлэх: ${esc(nu.u.title)} · Kapitel ${nu.c.nr}</a>
             <a class="btn" href="#karten">${icon('cards')} Карт давтах${due ? ` (${due})` : ''}</a>
           </div>
         </div>
@@ -856,8 +920,8 @@
       <div class="grid c2">
         <a class="tile" href="#starke"><span class="tile-ico">${icon('bolt')}</span><span class="h-card">Starke Verben</span><span class="muted">${D.IRREG.length} дүрмийн бус үйл үг — 3 хэлбэрийг нь хурдан цээжил</span>
           <span class="tile-foot"><span class="progress ok"><i style="width:${Math.round(100 * irrMastered() / D.IRREG.length)}%"></i></span>${irrMastered()}/${D.IRREG.length}</span></a>
-        <a class="tile" href="#workbook-ue1"><span class="tile-ico">${icon('pencil')}</span><span class="h-card">Übung 1</span><span class="muted">Дасгалын ном, 2-р хуудас — 3 цагаар орчуулах</span>
-          <span class="tile-foot"><span class="progress ok"><i style="width:${ue.best || 0}%"></i></span>${ue.best ? ue.best + '%' : 'шинэ'}</span></a>
+        <a class="tile" href="#uebungen"><span class="tile-ico">${icon('pencil')}</span><span class="h-card">Kurs</span><span class="muted">Inhaltsverzeichnis-ийн дарааллаар 27 бичгийн дасгал. Дараагийн: ${esc(nu.u.title)}</span>
+          <span class="tile-foot"><span class="progress ok"><i style="width:${Math.round(100 * cp.done / cp.total)}%"></i></span>${cp.done}/${cp.total}</span></a>
         <a class="tile" href="#karten"><span class="tile-ico">${icon('cards')}</span><span class="h-card">Karteikarten</span><span class="muted">${due ? `${due} үг давтах цаг болсон` : `${fresh} шинэ үг хүлээж байна`}</span>
           <span class="tile-foot">${icon('clock')} ~${Math.max(2, Math.round((due || 10) * .25))} мин</span></a>
         <a class="tile" href="#artikel"><span class="tile-ico">${icon('rain')}</span><span class="h-card">Artikel-Regen</span><span class="muted">der, die, das — бороо шиг унах үгсийг барь!</span>
@@ -934,34 +998,64 @@
     runSession($('#mix-host', v), sample(all, 12), { title: 'Холимог', topic: 'Mix', onQuit: () => go('grammatik') });
   };
 
-  /* ---------- Дасгалын ном ---------- */
+  /* ---------- Курс (Inhaltsverzeichnis-ийн дарааллаар) ---------- */
+  const WB = id => D.WORKBOOK.find(u => u.id === id);
+  const courseOrder = () => D.COURSE.flatMap(c => c.ues.map(id => ({ u: WB(id), c })));
+  function nextUebung() {
+    const all = courseOrder();
+    return all.find(x => !((S.workbook[x.u.id] || {}).best >= 80)) || all[0];
+  }
+  function afterUebung(id) {
+    const all = courseOrder(); const k = all.findIndex(x => x.u.id === id);
+    return all[k + 1] || null;
+  }
+  function courseProgress() {
+    const all = courseOrder();
+    return { done: all.filter(x => (S.workbook[x.u.id] || {}).best >= 80).length, total: all.length };
+  }
   VIEWS.uebungen = function (v) {
-    v.innerHTML = `${topbar('Übungen')}
-      <div class="lesson-head"><h1 class="h-hero">Übungen</h1><p class="sub-mn" style="margin:0">Дасгалын номын даалгавар: монгол өгүүлбэрийг Präsens, Präteritum, Perfekt — гурван цагаар бичнэ. Үгийн сануулга дээр дарвал герман үгийг харуулж, дуудна.</p></div>
-      <div class="grid c2">${D.WORKBOOK.map(u => {
-        const r = S.workbook[u.id] || {};
-        return `<div class="tile ${r.best >= 80 ? 'done' : ''}">
-          <span class="nr">${esc(u.page)} · ${u.items.length} өгүүлбэр</span>
-          <span class="h-card">${esc(u.title)}</span>
-          <span class="muted">${esc(u.mn)}</span>
-          <span class="tile-foot"><span class="progress ok"><i style="width:${r.best || 0}%"></i></span>${r.best != null ? r.best + '%' : 'шинэ'}</span>
-          <div class="row-flex"><a class="btn small primary" href="#workbook-${u.id}">Бүгдийг хийх</a><a class="btn small" href="#workbook-${u.id}~5">Хурдан 5</a></div>
-        </div>`;
-      }).join('')}
-        <a class="tile" href="#mix"><span class="tile-ico">${icon('shuffle')}</span><span class="h-card">Холимог дүрэм</span><span class="muted">Бүх дүрмийн сэдвээс 12 даалгавар</span></a>
-        <a class="tile" href="#satzbau"><span class="tile-ico">${icon('puzzle')}</span><span class="h-card">Satzbau</span><span class="muted">Өгүүлбэрийн үгсийг зөв дараалалд оруул</span></a>
-      </div>`;
+    const nx = nextUebung(), cp = courseProgress();
+    v.innerHTML = `${topbar('Kurs')}
+      <div class="lesson-head"><h1 class="h-hero">Kurs</h1>
+        <p class="sub-mn" style="margin:0">Дасгалын номын Inhaltsverzeichnis-ийн дарааллаар. Kapitel бүрт эхлээд дүрмээ уншаад, дараа нь бичгийн дасгалаа хий. 80%-иас дээш авбал дасгал «давсан» болно.</p></div>
+      <section class="panel" style="display:grid;gap:14px">
+        <div class="row-flex" style="justify-content:space-between;align-items:flex-end">
+          <div style="display:grid;gap:4px"><div class="label">Курсийн явц</div><div class="h-hero" style="font-size:40px">${cp.done}<span class="muted" style="font-size:18px;font-weight:500"> / ${cp.total} Übung</span></div></div>
+          <a class="btn gold" href="#workbook-${nx.u.id}">${icon('pencil')} Дараагийн: ${esc(nx.u.title)} · ${esc(nx.u.page)}</a>
+        </div>
+        <div class="progress ok"><i style="width:${Math.round(100 * cp.done / cp.total)}%"></i></div>
+        <p class="muted" style="margin:0;font-size:13px"><span class="pill gold">номоос</span> — дасгалын номын яг өгүүлбэр. <span class="pill">зохиосон</span> — тухайн сэдэв ба хичээлийн үйл үгээр зохиосон дасгал. Номын хуудсыг зураг авч өгвөл жинхэнэ дасгалаар сольж болно.</p>
+      </section>
+      ${D.COURSE.map(c => `<section class="panel kap">
+        <div class="row-flex" style="justify-content:space-between;align-items:flex-start">
+          <div style="display:grid;gap:4px;min-width:0;flex:1"><div class="label">Kapitel ${c.nr}</div><h2 class="h-sec">${esc(c.title)}</h2></div>
+          <a class="btn small" href="#lesson-${c.lesson}">${icon('book')} Дүрэм</a>
+        </div>
+        <div class="ue-list">${c.ues.map(id => {
+          const u = WB(id), r = S.workbook[id] || {};
+          return `<a class="ue-row ${r.best >= 80 ? 'done' : ''} ${nx.u.id === id ? 'next' : ''}" href="#workbook-${id}">
+            <span class="ue-t"><b>${esc(u.title)}</b> <span class="muted mono" style="font-size:12px">${esc(u.page)} · ${u.items.length}</span><span class="ue-mn">${esc(u.mn)}</span></span>
+            <span class="pill ${u.made ? '' : 'gold'}">${u.made ? 'зохиосон' : 'номоос'}</span>
+            <span class="progress ok"><i style="width:${r.best || 0}%"></i></span>
+            <span class="mono muted ue-pct">${r.best != null ? r.best + '%' : '—'}</span></a>`;
+        }).join('')}</div>
+      </section>`).join('')}`;
   };
   VIEWS.workbook = function (v, arg) {
     const [id, n] = String(arg || '').split('~');
-    const u = D.WORKBOOK.find(x => x.id === id);
+    const u = WB(id);
     if (!u) return VIEWS.uebungen(v);
+    const chap = D.COURSE.find(c => c.ues.includes(id));
     const items = n ? sample(u.items, Number(n)) : u.items.slice();
-    v.innerHTML = `${topbar(u.title + ' · ' + u.page, 'uebungen')}
-      <div class="lesson-head"><h1 class="h-hero">${esc(u.title)}</h1><p class="sub-mn" style="margin:0">${esc(u.mn)}</p></div><div id="wb-host"></div>`;
-    teacherSay('Drei Zeiten, ein Satz. Los geht es!', 'Нэг өгүүлбэр — гурван цаг. Эхэлцгээе!', 'wave', false);
+    const nxt = afterUebung(id);
+    v.innerHTML = `${topbar((chap ? 'Kapitel ' + chap.nr + ' · ' : '') + u.title + ' · ' + u.page, 'uebungen')}
+      <div class="lesson-head">
+        <div class="row-flex"><span class="pill ${u.made ? '' : 'gold'}">${u.made ? 'зохиосон дасгал' : 'номын дасгал'}</span>${chap ? `<a class="pill" href="#lesson-${chap.lesson}" style="text-decoration:none">${icon('book')} ${esc(chap.title)}</a>` : ''}</div>
+        <h1 class="h-hero">${esc(u.title)}</h1><p class="sub-mn" style="margin:0">${esc(u.mn)}</p></div><div id="wb-host"></div>`;
+    teacherSay('Schreiben, schreiben, schreiben! Los geht es!', 'Бич, бич, бич! Эхэлцгээе!', 'wave', false);
     runSession($('#wb-host', v), items, {
       title: u.title, topic: u.title,
+      next: nxt ? { href: 'workbook-' + nxt.u.id, label: 'Дараагийн: ' + nxt.u.title } : null,
       onFinish: pct => { const r = S.workbook[u.id] || {}; r.best = Math.max(r.best || 0, pct); if (!n) r.full = true; S.workbook[u.id] = r; save(); checkBadges(); },
       onQuit: () => go('uebungen')
     });
@@ -1013,7 +1107,7 @@
     queue = shuffle(queue);
     let idx = 0, flipped = false, known = 0;
     const dir = () => S.settings.cardDir;
-    v.innerHTML = `${topbar(tag === 'irr' ? 'Starke Verben · Karteikarten' : 'Wortschatz · Karteikarten', tag === 'irr' ? 'starke' : 'wortschatz')}
+    v.innerHTML = `${topbar(tag ? 'Starke Verben · Karteikarten' : 'Wortschatz · Karteikarten', tag ? 'starke' : 'wortschatz')}
       <div class="row-flex" style="justify-content:space-between">
         <h1 class="h-sec">Karteikarten</h1>
         <div class="seg" id="dir"><button data-d="de" class="${dir() === 'de' ? 'on' : ''}">DE → MN</button><button data-d="mn" class="${dir() === 'mn' ? 'on' : ''}">MN → DE</button></div>
@@ -1034,7 +1128,8 @@
       $('#kc', v).textContent = `${idx + 1} / ${queue.length}`;
       const deFace = `<span class="corner pill">${w.type === 'noun' ? 'Nomen' : w.type === 'verb' ? 'Verb' : 'Adjektiv'}</span><span class="corner-r">${sayBtn(wordLabel(w))}</span><div class="fword">${artHTML(w)}</div><div class="fextra">${esc(wordExtra(w))}</div>`;
       const mnFace = `<span class="corner pill">Монгол</span><div class="fmn">${esc(w.mn)}</div>`;
-      const front = dir() === 'de' ? deFace : mnFace, back = dir() === 'de' ? `${mnFace}<div class="fextra">${esc(wordLabel(w))}</div>` : deFace;
+      const mnem = w.mnemo ? `<div class="fextra" style="font-family:var(--font-body);font-style:italic;max-width:440px;margin:0 auto">${esc(w.mnemo)}</div>` : '';
+      const front = dir() === 'de' ? deFace : mnFace, back = (dir() === 'de' ? `${mnFace}<div class="fextra">${esc(wordLabel(w))}</div>` : deFace) + mnem;
       flash.innerHTML = `<div class="face front">${front}</div><div class="face back">${back}</div>`;
       if (dir() === 'de' && S.settings.voice) setTimeout(() => speak(wordLabel(w)), 200);
     }
@@ -1103,6 +1198,9 @@
   };
 
   /* ---------- Дүрмийн бус үйл үг (Starke Verben) ---------- */
+  const SEITE = { seite1: { p: 'Хуудас 1 · хичээлийн жагсаалт', mn: 'fahren, gehen, kommen … treffen — 27 үйл үг' }, seite2: { p: 'Хуудас 2 · хичээлийн жагсаалт', mn: 'helfen, tragen, geben … stehlen — 28 үйл үг' } };
+  const irrFilter = key => key === 'seite1' || key === 'seite2' ? D.IRREG.filter(x => x.s === (key === 'seite1' ? 1 : 2)).sort((a, b) => a.so - b.so) : D.IRREG.filter(x => x.g === key);
+  const irrGroupInfo = key => SEITE[key] || D.IRREG_GROUPS.find(x => x.k === key);
   function irrMastered(list) { return (list || D.IRREG).filter(x => ((S.srs[x.wid] || {}).box || 0) >= 3).length; }
   const auxHTML = perf => esc(perf).replace(/^ist /, '<span class="aux-sein">ist</span> ');
   function irrTable(list, opts = {}) {
@@ -1117,7 +1215,7 @@
         return `<tr data-k="${k}" data-s="${esc(norm(x.inf + ' ' + x.mn + ' ' + x.prat + ' ' + x.perf))}">
           <td class="d"><b>${esc(x.inf)}</b> <span class="lvl-dots" title="Хайрцаг ${box}/5">${[1, 2, 3, 4, 5].map(n => `<i class="${n <= box ? 'on' : ''}"></i>`).join('')}</span></td>
           <td class="d f">${esc(x.er)}</td><td class="d f">${esc(x.prat)}</td><td class="d f">${auxHTML(x.perf)}</td>
-          <td class="m">${esc(x.mn)}</td><td>${sayBtn(`${x.inf}. ${x.prat}. ${x.perf}.`)}</td></tr>`;
+          <td class="m">${esc(x.mn)}${x.mnemo ? `<div class="mnemo">${esc(x.mnemo)}</div>` : ''}</td><td>${sayBtn(`${x.inf}. ${x.prat}. ${x.perf}.`)}</td></tr>`;
       }).join('')}</tbody></table></div>`;
   }
   function wireIrrTable(root) {
@@ -1157,6 +1255,19 @@
           <a class="btn" href="#verben">${icon('clock')} Verb-Blitz</a>
         </div>
       </section>
+      <section class="panel" style="display:grid;gap:14px">
+        <div class="label">Хичээлийн жагсаалт · ойрын хугацаанд цээжлэх</div>
+        <h2 class="h-sec">${I.filter(x => x.s).length} үйл үг — санах дүрслэлтэй</h2>
+        <div class="grid c2">${[1, 2].map(n => {
+          const list = I.filter(x => x.s === n), gm = irrMastered(list);
+          return `<div class="tile" style="gap:12px">
+            <span class="nr">Хуудас ${n} · ${list.length} үйл үг</span>
+            <span class="muted">${list.slice().sort((a, b) => a.so - b.so).slice(0, 9).map(x => esc(x.inf)).join(', ')} …</span>
+            <span class="tile-foot"><span class="progress ok"><i style="width:${Math.round(100 * gm / list.length)}%"></i></span>${gm}/${list.length}</span>
+            <div class="row-flex" style="gap:8px"><a class="btn small gold" href="#vdrill-seite${n}">Бичиж давтах</a><a class="btn small" href="#vgruppe-seite${n}">Хүснэгт · сонсох</a><a class="btn small" href="#karten-s${n}">Карт</a></div>
+          </div>`;
+        }).join('')}</div>
+      </section>
       <h2 class="h-sec">Загвараар цээжлэх</h2>
       <div class="grid c2">${D.IRREG_GROUPS.map(g => {
         const list = I.filter(x => x.g === g.k), gm = irrMastered(list);
@@ -1172,9 +1283,9 @@
   };
 
   VIEWS.vgruppe = function (v, key) {
-    const g = D.IRREG_GROUPS.find(x => x.k === key);
+    const g = irrGroupInfo(key);
     if (!g) return VIEWS.starke(v);
-    const list = D.IRREG.filter(x => x.g === key);
+    const list = irrFilter(key);
     v.innerHTML = `${topbar('Starke Verben · ' + esc(g.p), 'starke')}
       <div class="lesson-head"><span class="pill gold" style="justify-self:start">${list.length} үйл үг</span><h1 class="h-hero">${esc(g.p)}</h1><p class="sub-mn" style="margin:0">${esc(g.mn)}</p></div>
       <div class="row-flex">
@@ -1210,7 +1321,7 @@
   VIEWS.vdrill = function (v, key) {
     const I = D.IRREG;
     let list;
-    if (key) list = shuffle(I.filter(x => x.g === key));
+    if (key) list = shuffle(irrFilter(key));
     else {
       const due = shuffle(I.filter(x => S.srs[x.wid] && S.srs[x.wid].due <= today()));
       list = due.slice(0, 12);
@@ -1218,7 +1329,7 @@
       if (list.length < 12) list = list.concat(sample(I.filter(x => !list.includes(x)), 12 - list.length));
       list = shuffle(list);
     }
-    const g = key && D.IRREG_GROUPS.find(x => x.k === key);
+    const g = key && irrGroupInfo(key);
     v.innerHTML = `${topbar('Starke Verben · Stammformen', key ? 'vgruppe-' + key : 'starke')}
       <div class="lesson-head"><h1 class="h-sec">${g ? esc(g.p) : 'Өдрийн 12'}</h1><p class="muted" style="margin:0">er/sie/es хэлбэр, Präteritum, Perfekt (haben/sein-тэй нь) бич. Enter дарвал дараагийн нүд рүү шилжинэ. Сануулга нь эгшгийн загварыг харуулна.</p></div>
       <div id="vd"></div>`;
@@ -1294,8 +1405,7 @@
     }
     function lose(w) {
       lives--; hearts();
-      teacherSay(`${w.art} ${w.de}`, w.mn, 'sad', false);
-      if (S.settings.voice) speak(`${w.art} ${w.de}`);
+      teacherReact(false, `${w.art} ${w.de}`);
       if (lives <= 0) end();
     }
     function answer(a) {
@@ -1304,7 +1414,7 @@
       if (f.w.art === a) {
         score++; $('#gs', v).textContent = score;
         remove(f, true);
-        if (score % 10 === 0) { const p = pick(D.PRAISE); teacherSay(p.de, `${score} оноо!`, 'happy', false); }
+        if (score % 5 === 0) teacherReact(true);
       } else { remove(f, true); lose(f.w); }
     }
     function start() {
@@ -1363,7 +1473,7 @@
       if (!running || lock) return; lock = true;
       const ok = b.dataset.o === cur.correct;
       $$('.opt', box).forEach(x => { if (x.dataset.o === cur.correct) x.classList.add('correct'); else if (x === b) x.classList.add('wrong'); else x.classList.add('dim'); });
-      if (ok) { score++; } else { teacherSay(`${cur.vf.inf} – ${cur.vf.prat} – ${cur.vf.aux} ${cur.vf.part}`, cur.vf.mn, 'sad', false); if (S.settings.voice) speak(`${cur.vf.inf}, ${cur.vf.prat}, ${cur.vf.aux} ${cur.vf.part}`); }
+      if (ok) { score++; if (score % 4 === 0) teacherReact(true); } else teacherReact(false, `${cur.vf.inf}, ${cur.vf.prat}, ${cur.vf.aux} ${cur.vf.part}`);
       setTimeout(() => running && q(), ok ? 380 : 1100);
     }
     function start() {
@@ -1422,8 +1532,7 @@
       const full = r.s.replace('___', aux);
       if (ok) { score++; addXP(4, card); } else addMistake({ type: 'mc', q: r.s, options: ['haben', 'sein'], answer: r.a, explain: r.why }, 'haben/sein');
       $('#hw', host).innerHTML = `<div class="feedback ${ok ? 'ok' : 'bad'}"><div class="fh">${icon(ok ? 'check' : 'x')} ${ok ? 'Зөв!' : 'Буруу — ' + r.a}</div><div class="ans">${esc(full)} ${sayBtn(full)}</div><div class="ex">${esc(r.why)}</div></div>`;
-      teacherSay(ok ? pick(D.PRAISE).de : full, ok ? '' : r.why, ok ? 'happy' : 'sad', false);
-      if (S.settings.voice) speak(full);
+      teacherReact(ok, full);
       setTimeout(() => { k++; if (k >= rounds.length) end(); else draw(); }, ok ? 1100 : 2200);
     }
     function end() {

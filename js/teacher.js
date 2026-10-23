@@ -53,8 +53,8 @@
     host.insertBefore(renderer.domElement, host.firstChild);
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
-    camera.position.set(0, 1.3, 6);
-    camera.lookAt(0, 1.12, 0);
+    camera.position.set(0, 1.4, 6.6);
+    camera.lookAt(0, 1.28, 0);
 
     scene.add(new THREE.HemisphereLight(0xfff4e0, 0x2a2a35, 1.35));
     const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(2.5, 4, 3.5); scene.add(key);
@@ -209,6 +209,40 @@
     }
     if (!usingGLB) buildProcedural();
 
+    /* ---------- Эффектүүд: оч, аадар үүл, гэгээн туяа, хөлс ---------- */
+    const headTop = usingGLB ? (CFG.modelHeight || 2.1) : 2.28;
+    const fx = new THREE.Group(); scene.add(fx);
+    const sparkGeo = new THREE.OctahedronGeometry(0.045);
+    let sparks = [];
+    function burst(colors, n) {
+      for (let i = 0; i < n; i++) {
+        const m = new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: colors[i % colors.length], transparent: true }));
+        m.position.set((Math.random() - .5) * 0.5, headTop - 0.25 + Math.random() * 0.3, 0.25);
+        const a = Math.random() * Math.PI * 2;
+        m.userData = { v: new THREE.Vector3(Math.cos(a) * (0.6 + Math.random() * 0.9), 1.1 + Math.random() * 1.5, (Math.random() - .3) * 0.6), life: 1.3 };
+        fx.add(m); sparks.push(m);
+      }
+    }
+    const cloud = new THREE.Group(); cloud.position.set(0, headTop + 0.36, 0.05); cloud.scale.setScalar(0.85); cloud.visible = false; fx.add(cloud);
+    const cMat = new THREE.MeshToonMaterial({ color: 0x4a4d57, gradientMap: grad, transparent: true, opacity: 0 });
+    [[0, 0, .22], [-.24, -.05, .17], [.24, -.04, .18], [-.1, .11, .16], [.13, .1, .15]].forEach(([x, y, r]) => {
+      const sp = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), cMat); sp.position.set(x, y, 0); cloud.add(sp);
+    });
+    const bolt = new THREE.Group(); const bMat = new THREE.MeshBasicMaterial({ color: 0xffd84a });
+    [[0.04, -0.27, -0.4], [-0.03, -0.41, 0.45], [0.035, -0.55, -0.4]].forEach(([x, y, rz]) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.17, 0.02), bMat); b.position.set(x, y, 0.08); b.rotation.z = rz; bolt.add(b);
+    });
+    cloud.add(bolt);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.025, 10, 40), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0 }));
+    halo.rotation.x = Math.PI / 2; halo.position.set(0, headTop + 0.2, 0); fx.add(halo);
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.8, 3.4, 32, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xfff1c0, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
+    beam.position.set(0, headTop + 0.4, -0.15); fx.add(beam);
+    const sweat = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), new THREE.MeshBasicMaterial({ color: 0x8fd3ff, transparent: true, opacity: 0 }));
+    sweat.scale.set(0.8, 1.25, 0.8); fx.add(sweat);
+    function flashStage(cls) { host.classList.remove('flash-ok', 'flash-bad'); void host.offsetWidth; host.classList.add(cls); }
+    const GOOD = ['happy', 'clap', 'cheer'], BAD = ['scold', 'pray', 'facepalm', 'despair', 'sad'];
+
     /* ---------- Төлөв ---------- */
     let mood = 'idle', moodT = 0, moodDur = 0;
     let talking = false, talkUntil = 0;
@@ -218,8 +252,16 @@
     api.react = m => {
       if (!m || m === 'talk') return;
       mood = m; moodT = 0;
-      moodDur = { happy: 1.4, sad: 1.3, wave: 1.8, think: 2.4 }[m] || 1.2;
-      if (usingGLB) fadeTo(m);
+      moodDur = { happy: 1.4, clap: 1.7, cheer: 2.1, sad: 1.3, wave: 1.8, think: 2.4, scold: 2.2, pray: 2.6, facepalm: 2.0, despair: 2.3 }[m] || 1.2;
+      if (m === 'happy') burst([0xe9c25b, 0xfff1c0], 10);
+      if (m === 'clap') burst([0xe9c25b, 0xffffff], 18);
+      if (m === 'cheer') { burst([0xe9c25b, 0xd4553f, 0xffffff, 0x67c58f], 34); setTimeout(() => burst([0xe9c25b, 0xffffff], 20), 700); }
+      if (GOOD.includes(m)) flashStage('flash-ok');
+      if (BAD.includes(m)) flashStage('flash-bad');
+      if (usingGLB) {
+        const alias = { clap: 'happy', cheer: 'happy', scold: 'sad', pray: 'sad', facepalm: 'sad', despair: 'sad' };
+        fadeTo(actions[m] ? m : alias[m] || m);
+      }
     };
     api.setTalking = b => { talking = !!b; if (!b) talkUntil = 0; if (usingGLB && actions.talk && b) fadeTo('talk'); if (usingGLB && !b && current === actions.talk) fadeTo('idle'); };
     api.talkFor = ms => { talkUntil = performance.now() + ms; };
@@ -240,8 +282,8 @@
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       // Нарийн (жижиг) дэлгэцэд илүү ойртуулна
-      camera.position.z = w / h < 0.8 ? 7.2 : w / h > 1.3 ? 5.2 : 6;
-      camera.lookAt(0, 1.12, 0);
+      camera.position.z = w / h < 0.8 ? 7.8 : w / h > 1.3 ? 5.8 : 6.6;
+      camera.lookAt(0, 1.28, 0);
       camera.updateProjectionMatrix();
     }
     new ResizeObserver(resize).observe(host);
@@ -259,11 +301,36 @@
       look.x = lerp(look.x, look.tx, 0.06); look.y = lerp(look.y, look.ty, 0.06);
       const isTalking = talking || performance.now() < talkUntil;
 
+      // --- Эффект шинэчлэх ---
+      sparks = sparks.filter(m => {
+        m.userData.life -= dt;
+        m.userData.v.y -= 3.2 * dt;
+        m.position.addScaledVector(m.userData.v, dt);
+        m.rotation.x += dt * 6; m.rotation.y += dt * 4;
+        m.material.opacity = Math.max(0, m.userData.life / 1.3);
+        if (m.userData.life <= 0) { fx.remove(m); m.material.dispose(); return false; }
+        return true;
+      });
+      const kk = mood !== 'idle' ? Math.sin(Math.min(1, moodT / Math.max(moodDur, 0.01)) * Math.PI) : 0;
+      const stormy = mood === 'scold' || mood === 'despair';
+      cMat.opacity = lerp(cMat.opacity, stormy ? Math.min(1, kk * 1.6) : 0, 0.15);
+      cloud.visible = cMat.opacity > 0.02;
+      cloud.position.y = headTop + 0.36 + Math.sin(t * 3) * 0.03;
+      cloud.position.x = Math.sin(t * 1.7) * 0.06;
+      bolt.visible = stormy && kk > 0.3 && Math.sin(t * 23) > 0.55;
+      const holy = mood === 'pray' ? Math.min(1, kk * 1.5) : 0;
+      halo.material.opacity = lerp(halo.material.opacity, holy, 0.12);
+      beam.material.opacity = lerp(beam.material.opacity, holy * 0.22, 0.1);
+      halo.position.y = headTop + 0.2 + Math.sin(t * 2.4) * 0.03;
+      const sweaty = (mood === 'facepalm' || mood === 'despair') ? kk : 0;
+      sweat.material.opacity = lerp(sweat.material.opacity, sweaty, 0.2);
+      sweat.position.set(0.4, headTop - 0.32 - ((moodT * 0.25) % 0.25), 0.28);
+
       if (usingGLB) {
         mixer && mixer.update(dt);
         root.rotation.y = look.x * 0.35;
         if (mood !== 'idle') { moodT += dt; if (moodT > moodDur) mood = 'idle'; }
-        if (!actions[mood] && mood === 'happy') root.position.y = Math.abs(Math.sin(moodT * 7)) * 0.15 * (1 - moodT / moodDur);
+        if (!actions[mood] && GOOD.includes(mood)) root.position.y = Math.abs(Math.sin(moodT * 7)) * 0.15 * (1 - moodT / moodDur);
         else root.position.y = 0;
         const open = isTalking ? 0.35 + 0.65 * Math.abs(Math.sin(t * 13) * Math.sin(t * 7.3)) : 0;
         mouthTargets.forEach(m => { m.mesh.morphTargetInfluences[m.idx] = lerp(m.mesh.morphTargetInfluences[m.idx], open, 0.4); });
@@ -301,6 +368,45 @@
       } else if (mood === 'think') {
         rx = -1.9 * k; rz = lerp(rz, -0.5, k);
         hz -= 0.16 * k; hx -= 0.1 * k; hy -= 0.25 * k; browTilt = -0.2 * k;
+      } else if (mood === 'clap') {
+        // Алга ташина
+        const osc = (Math.sin(moodT * 22) * 0.5 + 0.5) * 0.25 * k;
+        lx = rx = -1.25 * k;
+        lz = lerp(lz, 0.58, k) - osc; rz = lerp(rz, -0.58, k) + osc;
+        root.position.y = Math.abs(Math.sin(moodT * 11)) * 0.05 * k * amp;
+        browY = 0.17 + 0.03 * k; hx -= 0.1 * k;
+      } else if (mood === 'cheer') {
+        // Үсэрч, эргэлдэж баярлана
+        root.position.y = Math.abs(Math.sin(moodT * 9)) * 0.24 * (1 - moodT / moodDur) * amp;
+        root.rotation.y += (moodT / moodDur) * Math.PI * 2 * amp;
+        lz = lerp(lz, -2.6, k) + Math.sin(moodT * 16) * 0.15 * k; rz = lerp(rz, 2.6, k) - Math.sin(moodT * 16) * 0.15 * k;
+        browY = 0.17 + 0.035 * k; hx -= 0.15 * k;
+      } else if (mood === 'scold') {
+        // Долоовор хуруугаараа сүрдүүлж загнана, нөгөө гар нь ташаандаа
+        rx = -2.05 * k; rz = lerp(rz, -0.2, k) + Math.sin(moodT * 14) * 0.22 * k * amp;
+        lz = lerp(lz, -0.8, k); lx = 0.55 * k;
+        hy += Math.sin(moodT * 10) * 0.12 * k * amp; hx -= 0.05 * k;
+        browTilt = -0.5 * k; browY = 0.17 - 0.02 * k; smileFlip = true;
+      } else if (mood === 'pray') {
+        // Хоёр гараа нийлүүлж, тэнгэр өөд харж залбирна
+        lx = rx = -1.35 * k;
+        lz = lerp(lz, 0.64, k); rz = lerp(rz, -0.64, k);
+        hx = lerp(hx, -0.42, k); hy *= 1 - k; hz = Math.sin(moodT * 3) * 0.05 * k;
+        root.position.y = Math.sin(moodT * 5) * 0.02 * k;
+        browTilt = 0.4 * k; browY = 0.17 + 0.02 * k; smileFlip = true;
+      } else if (mood === 'facepalm') {
+        // Гараараа нүүрээ таглана
+        rx = -2.3 * k; rz = lerp(rz, -0.45, k);
+        hx = lerp(hx, 0.3, k); hz -= 0.12 * k; hy *= 1 - k;
+        lz = lerp(lz, -0.02, k);
+        browTilt = 0.3 * k; smileFlip = true;
+      } else if (mood === 'despair') {
+        // Хоёр гараа өргөж «Яагаад?!» гэж цөхөрнө
+        lz = lerp(lz, -2.75, k) + Math.sin(moodT * 18) * 0.12 * k * amp;
+        rz = lerp(rz, 2.75, k) - Math.sin(moodT * 18) * 0.12 * k * amp;
+        lx = rx = -0.35 * k;
+        hx = lerp(hx, -0.38, k); hy += Math.sin(moodT * 12) * 0.2 * k * amp;
+        browTilt = 0.5 * k; browY = 0.17 + 0.03 * k; smileFlip = true;
       }
       P.head.rotation.set(lerp(P.head.rotation.x, hx, 0.18), lerp(P.head.rotation.y, hy, 0.18), lerp(P.head.rotation.z, hz, 0.18));
       P.armL.pivot.rotation.z = lerp(P.armL.pivot.rotation.z, lz, 0.2);
@@ -315,7 +421,9 @@
       if (blinkT <= 0) { blinkPhase = 0.14; blinkT = 2.2 + Math.random() * 3.5; }
       let ey = 1;
       if (blinkPhase > 0) { blinkPhase -= dt; ey = 0.12; }
-      if (mood === 'happy' && k > 0.3) ey = Math.min(ey, 0.35); // инээхэд нүд нарийсна
+      if (GOOD.includes(mood) && k > 0.3) ey = Math.min(ey, 0.35); // инээхэд нүд нарийсна
+      if ((mood === 'pray' || mood === 'facepalm') && k > 0.3) ey = 0.1; // нүдээ аньна
+      if (mood === 'despair' && k > 0.3) ey = 1.35; // нүд томорно
       P.eyeL.scale.y = P.eyeR.scale.y = lerp(P.eyeL.scale.y, ey, 0.5);
       P.eyes.position.x = look.x * 0.025; P.eyes.position.y = 0.02 - look.y * 0.015;
 
@@ -325,7 +433,7 @@
         const o = 0.25 + 0.95 * Math.abs(Math.sin(t * 13) * Math.sin(t * 7.3 + 1));
         P.open.scale.y = lerp(P.open.scale.y, o, 0.5);
       } else {
-        P.open.visible = mood === 'happy' && k > 0.25; P.open.scale.y = 0.7;
+        P.open.visible = (GOOD.includes(mood) || mood === 'despair') && k > 0.25; P.open.scale.y = mood === 'despair' ? 1.3 : 0.7;
         P.smile.visible = !P.open.visible;
         P.smile.rotation.z = smileFlip ? 0 : Math.PI;
         P.smile.position.y = smileFlip ? -0.04 : 0;

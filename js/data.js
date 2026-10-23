@@ -216,7 +216,9 @@
     ['stehlen', 'stiehlt', 'stahl', 'hat gestohlen', 'хулгайлах', 'e-a-o'],
     ['sterben', 'stirbt', 'starb', 'ist gestorben', 'нас барах', 'e-a-o'],
     ['treffen', 'trifft', 'traf', 'hat getroffen', 'уулзах; онох', 'e-a-o'],
-    ['werfen', 'wirft', 'warf', 'hat geworfen', 'шидэх', 'e-a-o'],
+    ['werfen', 'wirft', 'warf', 'hat geworfen', 'шидэх, хаях', 'e-a-o'],
+    ['befehlen', 'befiehlt', 'befahl', 'hat befohlen', 'тушаах', 'e-a-o'],
+    ['gebären', 'gebärt', 'gebar', 'hat geboren', 'төрөх, төрүүлэх', 'e-a-o'],
     ['sich bewerben', 'bewirbt sich', 'bewarb sich', 'hat sich beworben', 'ажилд өргөдөл гаргах', 'e-a-o'],
     ['erschrecken', 'erschrickt', 'erschrak', 'ist erschrocken', 'цочих, айх', 'e-a-o'],
     ['essen', 'isst', 'aß', 'hat gegessen', 'идэх', 'e-a-e'],
@@ -269,11 +271,55 @@
     ['erhalten', 'erhält', 'erhielt', 'hat erhalten', 'хүлээн авах', 'praefix']
   ].map(([inf, er, prat, perf, mn, g]) => ({ inf, er, prat, perf, mn, g }));
 
+  /* Хичээлийн жагсаалт (Hausaufgabe) — 1-р хичээл, хуудас 1 ба 2.
+     Утга нь хичээл дээр өгсөн орчуулгаар. */
+  const KLASSE = {
+    1: { fahren: 'унаагаар явах', gehen: 'явган явах', kommen: 'ирэх', laufen: 'гүйх, алхах', fliegen: 'нисэх', fliehen: 'зугтах, оргох',
+      nehmen: 'авах', sehen: 'үзэх, харах', lesen: 'унших', schreiben: 'бичих', sprechen: 'ярих, ярилцах', steigen: 'өсөх, авирч гарах',
+      streiten: 'хэрэлдэх', schlafen: 'унтах', schneiden: 'огтлох, хайчлах, зүсэх', essen: 'идэх', trinken: 'уух', sitzen: 'суух',
+      stehen: 'зогсох, байх', liegen: 'хэвтэх, байх', hängen: 'өлгөөтэй байх', ziehen: 'татах, нүүх', beginnen: 'эхлэх',
+      bleiben: 'үлдэх, байх', bringen: 'авчрах, хүргэх', kennen: 'таних', treffen: 'уулзах' },
+    2: { helfen: 'туслах', tragen: 'өргөх, үүрэх, өмсөх, зүүх', geben: 'өгөх', schwimmen: 'сэлэх', rennen: 'уралдах, гүйх',
+      springen: 'үсрэх, харайх', rufen: 'дуудах', laden: 'ачих, цэнэглэх', lassen: 'орхих', waschen: 'угаах', wachsen: 'ургах',
+      fangen: 'барих', fallen: 'унах', sterben: 'үхэх, нас барах', 'gebären': 'төрөх', denken: 'бодох', haben: 'байх', sein: 'байх',
+      halten: 'тогтоож барих', schließen: 'хаах', schlagen: 'зодох, цохих', befehlen: 'тушаах', empfehlen: 'зөвлөх',
+      werfen: 'шидэх, хаях', wissen: 'мэдэх', vergessen: 'мартах', verlieren: 'алдах, гээх', stehlen: 'хулгайлах' }
+  };
+  /* Цээжлэх дүрслэл (хичээлийн тэмдэглэлээс) */
+  const MNEMO = {
+    schreiben: 'schrieb — үзэгнээс «шрийб!» хэмээн бэх цацрав', steigen: 'stieg — оргилд гараад стейк идэв',
+    bleiben: 'blieb — «блийб» дуугарах хуучин утас ганцаар үлдэв', streiten: 'stritt — гудамжинд (street) хэрэлдэв',
+    schneiden: 'schnitt — хайчаар Schnitzel зүсэв', trinken: 'trank — бүтэн танк шар айраг уугаад betrunken болов',
+    springen: 'sprang — пүрш дээр «спранг!»', beginnen: 'begonnen — «Гонг!» цохиулж эхлэв', schwimmen: 'schwamm — Schwamm (хөвөн) хөвж өнгөрөв',
+    fliegen: 'flog — далавчин дээр туг (flag)', fliehen: 'floh — Floh (бөөс) үсрэн зугтав', ziehen: 'zog — галын цогийг татаж гаргав',
+    verlieren: 'verlor — Лорд титмээ алдав', schließen: 'schloss — Schloss (цайз) хаалгаа хаав',
+    nehmen: 'nahm/genommen — нохой «Намайг ав!» гээд номоо зуугаад ирэв', sprechen: 'sprach — амнаас Sprache (хэл) урсав',
+    helfen: 'half — хагас (half) талхаа өгч тусалсан', sterben: 'starb — од (star) унаж бөхөв', werfen: 'warf — дайнд (war) чулуу шидэв',
+    treffen: 'traf — трафикт гацаж байхдаа найзтайгаа уулзав', befehlen: 'befohlen — хаан унагад (Fohlen) тушаав',
+    empfehlen: 'empfohlen — эмч унагад (Fohlen) зөвлөв', gebären: 'gebar/geboren — Bär (баавгай) бамбарууш төрүүлэв (born)',
+    stehlen: 'stahl — хулгайч ган (Stahl) сейф эвдэв', sehen: 'sah — сахалтай хүн рүү харав', lesen: 'las — лаа асаагаад уншив',
+    geben: 'gab — «Гав!» хаалга тогшоод бэлэг өгөв', essen: 'aß — асар их идэв', vergessen: 'vergaß — газаа (Gas) унтраахаа мартав',
+    schlafen: 'schlief — «шлийф…» хурхирав', laufen: 'lief — life бол гүйлт', rufen: 'rief — хад (reef) дээрээс дуудав',
+    fallen: 'fiel — унахдаа өвдөлт мэдрэв (feel)', halten: 'hielt — өсгий (heel)-өөс барьж тогтов', lassen: 'ließ — нохойн оосор (leash) тавиад орхив',
+    fangen: 'fing — загасыг сэрвээ (fin)-нээс барив', hängen: 'hing — хаалганы нугас (hinge) дээр өлгөөтэй',
+    fahren: 'fuhr — фургоноор явав', tragen: 'trug — truck ачаа зөөв', schlagen: 'schlug — эмгэн хумс (slug) цохив',
+    laden: 'lud — тэргэн дээр луу ачив', waschen: 'wusch — угаалгын машин «вуш-вуш»', wachsen: 'wuchs — модны оройд шаазгай «вукс!»',
+    bringen: 'brachte — бугуйвч (bracelet) авчрав', denken: 'dachte — даага унаад бодлогошров', kennen: 'kannte — Кантыг таних уу',
+    rennen: 'rannte — ранчо дээр морь уралдав', wissen: 'wusste — «вусс…» шивнэв', haben: 'hatte — надад малгай (hat) бий',
+    gehen: 'ging — gang гудамжаар алхав', kommen: 'kam — Kamel ирлээ', stehen: 'stand — тайз (stand) дээр зогсов',
+    sitzen: 'saß — үнээ саахаар суув', liegen: 'lag — лагтай газар хэвтэв', sein: 'war — энд дайн (war) байсан'
+  };
+  IRREG.forEach(v => {
+    [1, 2].forEach(n => { if (KLASSE[n][v.inf]) { v.s = n; v.mn = KLASSE[n][v.inf]; v.so = Object.keys(KLASSE[n]).indexOf(v.inf); } });
+    if (MNEMO[v.inf]) v.mnemo = MNEMO[v.inf];
+  });
+
   // Үгсийн сантай нэгтгэнэ (карт, SRS-д ашиглана)
   IRREG.forEach(v => {
     const w = VOCAB.find(x => x.type === 'verb' && x.de === v.inf);
-    if (w) { w.tags.push('irr'); w.er = v.er; }
-    else { const nv = V(v.inf, v.mn, v.prat, v.perf, ['irr']); nv.er = v.er; VOCAB.push(nv); }
+    const extra = v.s ? ['s' + v.s] : [];
+    if (w) { w.tags.push('irr', ...extra); w.er = v.er; w.mnemo = v.mnemo; if (v.s) w.mn = v.mn; }
+    else { const nv = V(v.inf, v.mn, v.prat, v.perf, ['irr', ...extra]); nv.er = v.er; nv.mnemo = v.mnemo; VOCAB.push(nv); }
   });
 
   VOCAB.forEach((w, i) => {
@@ -332,9 +378,12 @@
         T('Нагац эгч цэцгийг услаж байна.', ['die Tante', 'gießen', 'die Blumen'], 'Die Tante gießt die Blumen.', 'Die Tante goss die Blumen.', 'Die Tante hat die Blumen gegossen.'),
         T('Ах мод хагалж байна.', ['der Bruder', 'spalten', 'das Holz'], 'Der Bruder spaltet das Holz.', 'Der Bruder spaltete das Holz.', ['Der Bruder hat das Holz gespalten.', 'Der Bruder hat das Holz gespaltet.']),
         T('Гал команд өндөр байшингийн бүх оршин суугчдыг аварч байна.', ['die Feuerwehr', 'retten', 'der Bewohner', 'das Hochhaus'],
-          'Die Feuerwehr rettet alle Bewohner des Hochhauses.', 'Die Feuerwehr rettete alle Bewohner des Hochhauses.', 'Die Feuerwehr hat alle Bewohner des Hochhauses gerettet.'),
+          ['Die Feuerwehr rettet alle Bewohner des Hochhauses.', 'Die Feuerwehrleute retten alle Bewohner des Hochhauses.'],
+          ['Die Feuerwehr rettete alle Bewohner des Hochhauses.', 'Die Feuerwehrleute retteten alle Bewohner des Hochhauses.'],
+          ['Die Feuerwehr hat alle Bewohner des Hochhauses gerettet.', 'Die Feuerwehrleute haben alle Bewohner des Hochhauses gerettet.']),
         T('Ах зураг зурж байна.', ['der Bruder', 'zeichnen', 'das Bild'], 'Der Bruder zeichnet ein Bild.', 'Der Bruder zeichnete ein Bild.', 'Der Bruder hat ein Bild gezeichnet.'),
-        T('Эмээ төмс чанаж байна.', ['die Oma', 'kochen', 'die Kartoffel'], 'Die Oma kocht Kartoffeln.', 'Die Oma kochte Kartoffeln.', 'Die Oma hat Kartoffeln gekocht.'),
+        T('Ээж маань төмс хэрчиж байна.', ['die Mutter', 'schneiden', 'die Kartoffel'],
+          ['Meine Mutter schneidet die Kartoffeln.', 'Meine Mutter schneidet Kartoffeln.'], ['Meine Mutter schnitt die Kartoffeln.', 'Meine Mutter schnitt Kartoffeln.'], ['Meine Mutter hat die Kartoffeln geschnitten.', 'Meine Mutter hat Kartoffeln geschnitten.']),
         T('Багш өгүүллэгийн алдааг засаж байна.', ['der Lehrer', 'korrigieren', 'der Fehler', 'der Text'],
           ['Der Lehrer korrigiert die Fehler im Text.', 'Der Lehrer korrigiert die Fehler des Textes.', 'Der Lehrer korrigiert den Fehler im Text.'],
           ['Der Lehrer korrigierte die Fehler im Text.', 'Der Lehrer korrigierte die Fehler des Textes.', 'Der Lehrer korrigierte den Fehler im Text.'],
@@ -349,17 +398,20 @@
           ['Ich schließe die Tür des Badezimmers.', 'Ich schließe die Badezimmertür.'],
           ['Ich schloss die Tür des Badezimmers.', 'Ich schloss die Badezimmertür.'],
           ['Ich habe die Tür des Badezimmers geschlossen.', 'Ich habe die Badezimmertür geschlossen.']),
-        T('Хулгайч бүсгүйн гар цүнхийг хулгайлж байна.', ['der Dieb', 'stehlen', 'die Handtasche', 'die Frau'],
-          'Der Dieb stiehlt die Handtasche der Frau.', 'Der Dieb stahl die Handtasche der Frau.', 'Der Dieb hat die Handtasche der Frau gestohlen.'),
-        T('Эмээ цамц индүүдэж байна.', ['die Oma', 'bügeln', 'das Hemd'],
-          ['Die Oma bügelt das Hemd.', 'Die Oma bügelt ein Hemd.'], ['Die Oma bügelte das Hemd.', 'Die Oma bügelte ein Hemd.'], ['Die Oma hat das Hemd gebügelt.', 'Die Oma hat ein Hemd gebügelt.']),
-        T('Ээж цагаан ноосон цамцыг угааж байна.', ['die Mutter', 'waschen', 'weiß', 'der Pullover'],
-          'Die Mutter wäscht den weißen Pullover.', 'Die Mutter wusch den weißen Pullover.', 'Die Mutter hat den weißen Pullover gewaschen.'),
+        T('Нэг хулгайч нэгэн бүсгүйн гар цүнхийг хулгайлж байна.', ['der Dieb', 'stehlen', 'die Handtasche', 'die Frau'],
+          ['Ein Dieb stiehlt die Handtasche einer Frau.', 'Der Dieb stiehlt die Handtasche der Frau.'],
+          ['Ein Dieb stahl die Handtasche einer Frau.', 'Der Dieb stahl die Handtasche der Frau.'],
+          ['Ein Dieb hat die Handtasche einer Frau gestohlen.', 'Der Dieb hat die Handtasche der Frau gestohlen.']),
+        T('Би өвөөгийнхөө цамцыг индүүдэж байна.', ['bügeln', 'das Hemd', 'der Opa'],
+          ['Ich bügle das Hemd meines Opas.', 'Ich bügele das Hemd meines Opas.', 'Ich bügle Opas Hemd.'], ['Ich bügelte das Hemd meines Opas.', 'Ich bügelte Opas Hemd.'], ['Ich habe das Hemd meines Opas gebügelt.', 'Ich habe Opas Hemd gebügelt.']),
+        T('Би аавынхаа цагаан ноосон цамцыг угааж байна.', ['waschen', 'weiß', 'der Pullover', 'der Vater'],
+          ['Ich wasche den weißen Pullover meines Vaters.', 'Ich wasche Papas weißen Pullover.'], ['Ich wusch den weißen Pullover meines Vaters.', 'Ich wusch Papas weißen Pullover.'], ['Ich habe den weißen Pullover meines Vaters gewaschen.', 'Ich habe Papas weißen Pullover gewaschen.']),
         T('Нагац эгч шөл хийж байна.', ['die Tante', 'kochen', 'die Suppe'],
           ['Die Tante kocht Suppe.', 'Die Tante kocht eine Suppe.', 'Die Tante kocht die Suppe.'],
           ['Die Tante kochte Suppe.', 'Die Tante kochte eine Suppe.', 'Die Tante kochte die Suppe.'],
           ['Die Tante hat Suppe gekocht.', 'Die Tante hat eine Suppe gekocht.', 'Die Tante hat die Suppe gekocht.']),
-        T('Хүү муурыг хооллож байна.', ['der Sohn', 'füttern', 'die Katze'], 'Der Sohn füttert die Katze.', 'Der Sohn fütterte die Katze.', 'Der Sohn hat die Katze gefüttert.')
+        T('Хүү маань муураа хооллож байна.', ['der Sohn', 'füttern', 'die Katze'],
+          ['Mein Sohn füttert seine Katze.', 'Mein Sohn füttert die Katze.'], ['Mein Sohn fütterte seine Katze.', 'Mein Sohn fütterte die Katze.'], ['Mein Sohn hat seine Katze gefüttert.', 'Mein Sohn hat die Katze gefüttert.'])
       ]
     },
     {
@@ -384,6 +436,258 @@
     }
   ];
 
+  /* ---------- Курсийн бусад дасгал (Übung 3–27) ----------
+     Тэмдэглэл: Übung 1 (1–7) нь номын яг өгүүлбэр. Бусад нь номын
+     сэдэв, хичээлийн үйл үгээр зохиосон бичгийн дасгал. Номын жинхэнэ
+     хуудсыг авбал энэ өгүүлбэрүүдийг сольж болно. */
+  const Wr = (task, prompt, answers, hints, explain) => ({ type: 'write', task, prompt, answers: [].concat(answers), hints: hints || [], explain });
+  const Mc = (q, options, answer, explain) => ({ type: 'mc', q, options, answer, explain });
+  const In = (q, answers, explain) => ({ type: 'input', q, answers: [].concat(answers), explain });
+  const ue = (id, title, page, mn, items, made = true) => ({ id, title, page, mn, items, made });
+  const J = 'Хоёр өгүүлбэрийг нийлүүлж бич';
+  const TR = 'Герман хэлээр бич';
+  WORKBOOK.forEach(u => { u.made = u.id !== 'ue1'; });
+  WORKBOOK.push(
+    ue('ue3', 'Übung 3', 'Seite 7', 'Хөдөлгөөний үйл үг (ихэнх нь sein-тэй!) — гурван цагаар бич.', [
+      T('Би автобусаар ажилдаа явж байна.', ['fahren', 'der Bus', 'die Arbeit'], 'Ich fahre mit dem Bus zur Arbeit.', 'Ich fuhr mit dem Bus zur Arbeit.', 'Ich bin mit dem Bus zur Arbeit gefahren.'),
+      T('Хүүхдүүд сургууль руугаа алхаж байна.', ['das Kind', 'gehen', 'die Schule'], ['Die Kinder gehen zur Schule.', 'Die Kinder gehen in die Schule.'], ['Die Kinder gingen zur Schule.', 'Die Kinder gingen in die Schule.'], ['Die Kinder sind zur Schule gegangen.', 'Die Kinder sind in die Schule gegangen.']),
+      T('Ах маань Берлинээс ирж байна.', ['der Bruder', 'kommen'], 'Mein Bruder kommt aus Berlin.', 'Mein Bruder kam aus Berlin.', 'Mein Bruder ist aus Berlin gekommen.'),
+      T('Нохой цэцэрлэгт хүрээлэнд гүйж байна.', ['der Hund', 'laufen', 'der Park'], 'Der Hund läuft im Park.', 'Der Hund lief im Park.', 'Der Hund ist im Park gelaufen.'),
+      T('Бид Улаанбаатар руу нисч байна.', ['fliegen'], 'Wir fliegen nach Ulaanbaatar.', 'Wir flogen nach Ulaanbaatar.', 'Wir sind nach Ulaanbaatar geflogen.'),
+      T('Хулгайч цагдаагаас зугтаж байна.', ['der Dieb', 'fliehen', 'die Polizei'], 'Der Dieb flieht vor der Polizei.', 'Der Dieb floh vor der Polizei.', 'Der Dieb ist vor der Polizei geflohen.'),
+      T('Тэр (эмэгтэй) уул руу авирч байна.', ['steigen', 'der Berg'], 'Sie steigt auf den Berg.', 'Sie stieg auf den Berg.', 'Sie ist auf den Berg gestiegen.')
+    ]),
+    ue('ue4', 'Übung 4', 'Seite 9', 'Хуудас 1-ийн үйл үгс — гурван цагаар бич.', [
+      T('Би номын сангаас ном авч байна.', ['nehmen', 'das Buch', 'die Bibliothek'], 'Ich nehme ein Buch aus der Bibliothek.', 'Ich nahm ein Buch aus der Bibliothek.', 'Ich habe ein Buch aus der Bibliothek genommen.'),
+      T('Бид кино үзэж байна.', ['sehen', 'der Film'], 'Wir sehen einen Film.', 'Wir sahen einen Film.', 'Wir haben einen Film gesehen.'),
+      T('Ээж маань сонин уншиж байна.', ['die Mutter', 'lesen', 'die Zeitung'], 'Meine Mutter liest die Zeitung.', 'Meine Mutter las die Zeitung.', 'Meine Mutter hat die Zeitung gelesen.'),
+      T('Багш оюутантай ярилцаж байна.', ['der Lehrer', 'sprechen', 'der Student'], 'Der Lehrer spricht mit dem Studenten.', 'Der Lehrer sprach mit dem Studenten.', 'Der Lehrer hat mit dem Studenten gesprochen.'),
+      T('Хоёр хөрш хэрэлдэж байна.', ['der Nachbar', 'streiten'], ['Die zwei Nachbarn streiten.', 'Zwei Nachbarn streiten.'], ['Die zwei Nachbarn stritten.', 'Zwei Nachbarn stritten.'], ['Die zwei Nachbarn haben gestritten.', 'Zwei Nachbarn haben gestritten.']),
+      T('Хүүхэд найман цаг унтаж байна.', ['das Kind', 'schlafen', 'die Stunde'], 'Das Kind schläft acht Stunden.', 'Das Kind schlief acht Stunden.', 'Das Kind hat acht Stunden geschlafen.'),
+      T('Тэр (эр) захиа бичиж байна.', ['schreiben', 'der Brief'], 'Er schreibt einen Brief.', 'Er schrieb einen Brief.', 'Er hat einen Brief geschrieben.')
+    ]),
+    ue('ue5', 'Übung 5', 'Seite 14', 'Байрлалын ба өдөр тутмын үйл үг — гурван цагаар бич.', [
+      T('Бид пицца идэж байна.', ['essen', 'die Pizza'], ['Wir essen Pizza.', 'Wir essen eine Pizza.'], ['Wir aßen Pizza.', 'Wir aßen eine Pizza.'], ['Wir haben Pizza gegessen.', 'Wir haben eine Pizza gegessen.']),
+      T('Тэр (эр) кофе ууж байна.', ['trinken', 'der Kaffee'], ['Er trinkt Kaffee.', 'Er trinkt einen Kaffee.'], ['Er trank Kaffee.', 'Er trank einen Kaffee.'], ['Er hat Kaffee getrunken.', 'Er hat einen Kaffee getrunken.']),
+      T('Эмээ сандал дээр сууж байна.', ['die Oma', 'sitzen', 'der Stuhl'], 'Die Oma sitzt auf dem Stuhl.', 'Die Oma saß auf dem Stuhl.', 'Die Oma hat auf dem Stuhl gesessen.'),
+      T('Машин гаражид байна (зогсож).', ['das Auto', 'stehen', 'die Garage'], 'Das Auto steht in der Garage.', 'Das Auto stand in der Garage.', 'Das Auto hat in der Garage gestanden.'),
+      T('Ном ширээн дээр байна (хэвтэж).', ['das Buch', 'liegen', 'der Tisch'], 'Das Buch liegt auf dem Tisch.', 'Das Buch lag auf dem Tisch.', 'Das Buch hat auf dem Tisch gelegen.'),
+      T('Зураг хананд өлгөөтэй байна.', ['das Bild', 'hängen', 'die Wand'], 'Das Bild hängt an der Wand.', 'Das Bild hing an der Wand.', 'Das Bild hat an der Wand gehangen.'),
+      T('Хичээл найман цагт эхэлж байна.', ['der Unterricht', 'beginnen'], ['Der Unterricht beginnt um acht Uhr.', 'Der Unterricht beginnt um 8 Uhr.'], ['Der Unterricht begann um acht Uhr.', 'Der Unterricht begann um 8 Uhr.'], ['Der Unterricht hat um acht Uhr begonnen.', 'Der Unterricht hat um 8 Uhr begonnen.'])
+    ]),
+    ue('ue6', 'Übung 6', 'Seite 16', 'bleiben, bringen, kennen, treffen, helfen, tragen, schwimmen — гурван цагаар бич.', [
+      T('Би гэртээ үлдэж байна.', ['bleiben'], 'Ich bleibe zu Hause.', 'Ich blieb zu Hause.', 'Ich bin zu Hause geblieben.'),
+      T('Шуудан зөөгч захиа авчирч байна.', ['der Postbote', 'bringen', 'der Brief'], ['Der Postbote bringt einen Brief.', 'Der Postbote bringt den Brief.'], ['Der Postbote brachte einen Brief.', 'Der Postbote brachte den Brief.'], ['Der Postbote hat einen Brief gebracht.', 'Der Postbote hat den Brief gebracht.']),
+      T('Би түүнийг (эр) сайн таньдаг.', ['kennen'], 'Ich kenne ihn gut.', 'Ich kannte ihn gut.', 'Ich habe ihn gut gekannt.'),
+      T('Бид кафед найзуудтайгаа уулзаж байна.', ['treffen', 'der Freund', 'das Café'], 'Wir treffen unsere Freunde im Café.', 'Wir trafen unsere Freunde im Café.', 'Wir haben unsere Freunde im Café getroffen.'),
+      T('Хүү ээждээ тусалж байна.', ['der Sohn', 'helfen', 'die Mutter'], 'Der Sohn hilft seiner Mutter.', 'Der Sohn half seiner Mutter.', 'Der Sohn hat seiner Mutter geholfen.'),
+      T('Аав хүнд цүнх үүрч байна.', ['der Vater', 'tragen', 'schwer', 'die Tasche'], 'Der Vater trägt eine schwere Tasche.', 'Der Vater trug eine schwere Tasche.', 'Der Vater hat eine schwere Tasche getragen.'),
+      T('Хүүхдүүд нууранд сэлж байна.', ['das Kind', 'schwimmen', 'der See'], 'Die Kinder schwimmen im See.', 'Die Kinder schwammen im See.', 'Die Kinder sind im See geschwommen.')
+    ]),
+    ue('ue7', 'Übung 7', 'Seite 22', 'Хуудас 2-ын үйл үгс — гурван цагаар бич.', [
+      T('Тамирчин хурдан гүйж байна.', ['der Sportler', 'rennen', 'schnell'], 'Der Sportler rennt schnell.', 'Der Sportler rannte schnell.', 'Der Sportler ist schnell gerannt.'),
+      T('Муур ширээн дээр үсэрч байна.', ['die Katze', 'springen', 'der Tisch'], 'Die Katze springt auf den Tisch.', 'Die Katze sprang auf den Tisch.', 'Die Katze ist auf den Tisch gesprungen.'),
+      T('Ээж хүүхдүүдээ дуудаж байна.', ['die Mutter', 'rufen', 'das Kind'], 'Die Mutter ruft ihre Kinder.', 'Die Mutter rief ihre Kinder.', 'Die Mutter hat ihre Kinder gerufen.'),
+      T('Би утсаа цэнэглэж байна.', ['laden', 'das Handy'], ['Ich lade mein Handy.', 'Ich lade mein Handy auf.'], ['Ich lud mein Handy.', 'Ich lud mein Handy auf.'], ['Ich habe mein Handy geladen.', 'Ich habe mein Handy aufgeladen.']),
+      T('Цэцэрлэгт мод ургаж байна.', ['der Garten', 'wachsen', 'der Baum'], ['Im Garten wächst ein Baum.', 'Ein Baum wächst im Garten.'], ['Im Garten wuchs ein Baum.', 'Ein Baum wuchs im Garten.'], ['Im Garten ist ein Baum gewachsen.', 'Ein Baum ist im Garten gewachsen.']),
+      T('Навчнууд модноос унаж байна.', ['das Blatt', 'fallen', 'der Baum'], 'Die Blätter fallen vom Baum.', 'Die Blätter fielen vom Baum.', 'Die Blätter sind vom Baum gefallen.'),
+      T('Хөвгүүн бөмбөг барьж байна.', ['der Junge', 'fangen', 'der Ball'], 'Der Junge fängt den Ball.', 'Der Junge fing den Ball.', 'Der Junge hat den Ball gefangen.')
+    ]),
+    ue('ue8', 'Übung 8', 'Seite 25', 'Давталт: хуудас 2-ын үйл үг, Präteritum-ийн төгсгөл, Genitiv — хичээл дээр гарсан алдаанууд.', [
+      T('Эмч надад энэ эмийг зөвлөж байна.', ['der Arzt', 'empfehlen', 'das Medikament'], 'Der Arzt empfiehlt mir dieses Medikament.', 'Der Arzt empfahl mir dieses Medikament.', 'Der Arzt hat mir dieses Medikament empfohlen.'),
+      T('Би түлхүүрээ гээж байна.', ['verlieren', 'der Schlüssel'], 'Ich verliere meinen Schlüssel.', 'Ich verlor meinen Schlüssel.', 'Ich habe meinen Schlüssel verloren.'),
+      T('Би хариултыг мэдэж байна.', ['wissen', 'die Antwort'], 'Ich weiß die Antwort.', 'Ich wusste die Antwort.', 'Ich habe die Antwort gewusst.'),
+      T('Тэр (эм) миний нэрийг мартаж байна.', ['vergessen', 'der Name'], 'Sie vergisst meinen Namen.', 'Sie vergaß meinen Namen.', 'Sie hat meinen Namen vergessen.'),
+      In('sitzen · du → Präteritum', ['saßt', 'du saßt'], 'ß/s/z-ээр төгсвөл du хэлбэрт зөвхөн -t: du saßt (saßst биш).'),
+      In('sitzen · ihr → Präteritum', ['saßt', 'ihr saßt'], 'ihr хэлбэр -t: ihr saßt (saßen биш).'),
+      In('gehen · du → Präteritum', ['gingst', 'du gingst'], 'Präteritum-ийн төгсгөл: -, -st, -, -en, -t, -en.'),
+      In('lesen · du → Präteritum', ['last', 'du last'], 'las + st → last (s давхардахгүй).'),
+      In('essen · ihr → Präteritum', ['aßt', 'ihr aßt'], 'aß + t → aßt.'),
+      Mc('Сузанна эмээгийнхээ нүдний шилийг зүүж байна: Susanna trägt ___.', ['die Brille ihrer Oma', 'ihrer Omas Brille', 'die Brille seiner Oma'], 'die Brille ihrer Oma', '«ihrer Omas Brille» буруу. Зөв: die Brille ihrer Oma эсвэл Omas Brille.'),
+      Mc('Die Feuerwehr ___ alle Bewohner des Hochhauses.', ['rettet', 'retten'], 'rettet', 'die Feuerwehr — ганц тоо → rettet.'),
+      Mc('Die Feuerwehr rettet alle ___ des Hochhauses.', ['Bewohner', 'Bewohnern'], 'Bewohner', 'Akkusativ олон тоо → Bewohner. -n зөвхөн Dativ олон тоонд.'),
+      Mc('Mein Sohn füttert ___ Katze.', ['seine', 'ihre'], 'seine', 'Эзэмшигч (mein Sohn) эр хүйс → seine.'),
+      Mc('schneiden → Partizip II', ['geschnitten', 'geschneidet'], 'geschnitten', 'schneiden – schnitt – geschnitten (geschneidet буруу).')
+    ]),
+    ue('ue9', 'Übung 9', 'Seite 29', 'Der dass-Satz — бичих дасгал.', [
+      Wr('Ich finde, dass … гэж эхлүүл', 'Der Kurs ist sehr gut.', 'Ich finde, dass der Kurs sehr gut ist.'),
+      Wr('Ich weiß, dass … гэж эхлүүл', 'Sie kommt heute nicht.', 'Ich weiß, dass sie heute nicht kommt.'),
+      Wr('Es freut mich, dass … гэж эхлүүл', 'Er hat die Prüfung bestanden.', 'Es freut mich, dass er die Prüfung bestanden hat.'),
+      Wr('Ich hoffe, dass … гэж эхлүүл', 'Wir können morgen schwimmen gehen.', 'Ich hoffe, dass wir morgen schwimmen gehen können.'),
+      Wr(TR, 'Чамайг ирсэнд би баяртай байна.', ['Ich freue mich, dass du gekommen bist.', 'Es freut mich, dass du gekommen bist.'], ['sich freuen', 'kommen']),
+      Wr(TR, 'Германд амьдрах хэцүү гэж тэр (эр) хэлж байна.', ['Er sagt, dass das Leben in Deutschland schwer ist.', 'Er sagt, dass es schwer ist, in Deutschland zu leben.'], ['sagen', 'das Leben', 'schwer']),
+      Wr(TR, 'Чи өдөр бүр герман хэл давтах нь чухал.', ['Es ist wichtig, dass du jeden Tag Deutsch übst.', 'Es ist wichtig, dass du jeden Tag Deutsch lernst.', 'Es ist wichtig, dass du jeden Tag Deutsch wiederholst.'], ['wichtig', 'üben']),
+      Wr(TR, 'Тэр (эр) маргааш ирнэ гэдгийг би мэдээгүй.', ['Ich wusste nicht, dass er morgen kommt.', 'Ich habe nicht gewusst, dass er morgen kommt.'], ['wissen', 'morgen'])
+    ]),
+    ue('ue10', 'Übung 10', 'Seite 31', 'Infinitiv mit zu — хоёр өгүүлбэрийг нийлүүл.', [
+      Wr(J, 'Ich habe keine Lust. Ich räume auf.', ['Ich habe keine Lust aufzuräumen.', 'Ich habe keine Lust, aufzuräumen.']),
+      Wr(J, 'Er versucht es. Er kommt pünktlich.', 'Er versucht, pünktlich zu kommen.'),
+      Wr(J, 'Es ist schwer. Man lernt Deutsch.', 'Es ist schwer, Deutsch zu lernen.'),
+      Wr(J, 'Vergiss nicht! Du kaufst Brot.', ['Vergiss nicht, Brot zu kaufen!', 'Vergiss nicht, Brot zu kaufen.']),
+      Wr(J, 'Wir haben vor. Wir fahren nach Hamburg.', 'Wir haben vor, nach Hamburg zu fahren.'),
+      Wr(J, 'Sie fängt an. Sie arbeitet.', ['Sie fängt an zu arbeiten.', 'Sie fängt an, zu arbeiten.'])
+    ]),
+    ue('ue11', 'Übung 11', 'Seite 33', 'dass-Satz → zu + Infinitiv болгож хувирга.', [
+      Wr('zu + Infinitiv болго', 'Ich hoffe, dass ich bald eine Arbeit finde.', 'Ich hoffe, bald eine Arbeit zu finden.'),
+      Wr('zu + Infinitiv болго', 'Er verspricht, dass er pünktlich kommt.', 'Er verspricht, pünktlich zu kommen.'),
+      Wr('zu + Infinitiv болго', 'Ich freue mich, dass ich dich sehe.', 'Ich freue mich, dich zu sehen.'),
+      Wr('zu + Infinitiv болго', 'Wir beschließen, dass wir umziehen.', ['Wir beschließen umzuziehen.', 'Wir beschließen, umzuziehen.'], [], 'Салдаг үйл үг: um-zu-ziehen.'),
+      Wr('zu + Infinitiv болго', 'Es ist verboten, dass man hier raucht.', 'Es ist verboten, hier zu rauchen.'),
+      Wr('zu + Infinitiv болго (B2)', 'Sie glaubt, dass sie alles richtig gemacht hat.', 'Sie glaubt, alles richtig gemacht zu haben.', [], 'Өнгөрсөн үйлдэл: Partizip II + zu haben/sein.')
+    ]),
+    ue('ue12', 'Übung 12', 'Seite 35', 'Infinitiv mit zu — орчуулах.', [
+      Wr(TR, 'Би чам руу утасдахаа мартсан.', 'Ich habe vergessen, dich anzurufen.', ['vergessen', 'anrufen']),
+      Wr(TR, 'Надад кино үзэх цаг алга.', ['Ich habe keine Zeit, einen Film zu sehen.', 'Ich habe keine Zeit, den Film zu sehen.', 'Ich habe keine Zeit, ins Kino zu gehen.'], ['die Zeit', 'sehen']),
+      Wr(TR, 'Тэр (эм) тамхиа хаяхыг хичээж байна.', 'Sie versucht, mit dem Rauchen aufzuhören.', ['versuchen', 'aufhören', 'das Rauchen']),
+      Wr(TR, 'Германд ажиллах бол миний мөрөөдөл.', ['Es ist mein Traum, in Deutschland zu arbeiten.', 'Mein Traum ist es, in Deutschland zu arbeiten.'], ['der Traum', 'arbeiten']),
+      Wr(TR, 'Бид маргааш эрт босохоор төлөвлөж байна.', 'Wir haben vor, morgen früh aufzustehen.', ['vorhaben', 'aufstehen']),
+      Wr(TR, 'Түүнтэй (эр) уулзах сайхан байна.', ['Es ist schön, ihn zu treffen.', 'Es ist schön, ihn zu sehen.'], ['schön', 'treffen'])
+    ]),
+    ue('ue13', 'Übung 13', 'Seite 35', 'Der ob-Satz — шууд бус асуулт.', [
+      Wr('Ich frage mich, … гэж үргэлжлүүл', 'Kommt er heute?', 'Ich frage mich, ob er heute kommt.'),
+      Wr('Wissen Sie, …? гэж үргэлжлүүл', 'Ist das Museum am Montag geöffnet?', 'Wissen Sie, ob das Museum am Montag geöffnet ist?'),
+      Wr('Ich weiß nicht, … гэж үргэлжлүүл', 'Hat sie die E-Mail bekommen?', 'Ich weiß nicht, ob sie die E-Mail bekommen hat.'),
+      Wr('Darf ich fragen, …? гэж үргэлжлүүл', 'Kann ich mit Karte bezahlen?', 'Darf ich fragen, ob ich mit Karte bezahlen kann?'),
+      Wr(TR, 'Тэр (эр) завтай эсэхийг би мэдэхгүй.', 'Ich weiß nicht, ob er Zeit hat.', ['wissen', 'die Zeit']),
+      Wr(TR, 'Галт тэрэг цагтаа ирэх эсэхийг би асууж байна.', ['Ich frage, ob der Zug pünktlich ankommt.', 'Ich frage, ob der Zug pünktlich kommt.'], ['fragen', 'der Zug', 'pünktlich'])
+    ]),
+    ue('ue14', 'Übung 14', 'Seite 37', 'Der W-Satz — шууд бус W-асуулт.', [
+      Wr('Können Sie mir sagen, …? гэж үргэлжлүүл', 'Wann fährt der Bus?', 'Können Sie mir sagen, wann der Bus fährt?'),
+      Wr('Ich weiß nicht, … гэж үргэлжлүүл', 'Wo wohnt deine Schwester?', 'Ich weiß nicht, wo deine Schwester wohnt.'),
+      Wr('Weißt du, …? гэж үргэлжлүүл', 'Wie viel kostet das Ticket?', 'Weißt du, wie viel das Ticket kostet?'),
+      Wr('Ich verstehe nicht, … гэж үргэлжлүүл', 'Warum ist er so müde?', 'Ich verstehe nicht, warum er so müde ist.'),
+      Wr('Niemand weiß, … гэж үргэлжлүүл', 'Wer hat das Fenster geöffnet?', 'Niemand weiß, wer das Fenster geöffnet hat.'),
+      Wr(TR, 'Банк хэдэн цагт хаадгийг надад хэлж өгөөч? (эелдэг)', ['Können Sie mir sagen, wann die Bank schließt?', 'Können Sie mir sagen, um wie viel Uhr die Bank schließt?', 'Könnten Sie mir sagen, wann die Bank schließt?'], ['die Bank', 'schließen'])
+    ]),
+    ue('ue15', 'Übung 15', 'Seite 38', 'anstatt dass · anstatt … zu', [
+      Wr(J + ' (anstatt … zu)', 'Er sieht fern. Er sollte lernen.', 'Er sieht fern, anstatt zu lernen.'),
+      Wr(J + ' (anstatt … zu)', 'Sie fährt mit dem Auto. Sie könnte zu Fuß gehen.', 'Sie fährt mit dem Auto, anstatt zu Fuß zu gehen.'),
+      Wr(J + ' (anstatt … zu)', 'Mein Bruder schläft. Er sollte mir helfen.', 'Mein Bruder schläft, anstatt mir zu helfen.'),
+      Wr(J + ' (anstatt dass)', 'Ich koche selbst. Mein Mann kocht nicht.', 'Ich koche selbst, anstatt dass mein Mann kocht.'),
+      Wr(TR, 'Тэр (эр) ажилдаа явахын оронд гэртээ үлдсэн.', ['Er ist zu Hause geblieben, anstatt zur Arbeit zu gehen.', 'Er blieb zu Hause, anstatt zur Arbeit zu gehen.', 'Anstatt zur Arbeit zu gehen, ist er zu Hause geblieben.'], ['bleiben', 'die Arbeit']),
+      Wr(TR, 'Утсаар тоглохын оронд ном унш!', ['Lies ein Buch, anstatt mit dem Handy zu spielen!', 'Lies ein Buch, statt mit dem Handy zu spielen!'], ['lesen', 'das Handy', 'spielen'])
+    ]),
+    ue('ue16', 'Übung 16', 'Seite 41', 'weil · da — шалтгаан.', [
+      Wr(J + ' (weil)', 'Ich gehe nicht zur Arbeit. Ich bin krank.', 'Ich gehe nicht zur Arbeit, weil ich krank bin.'),
+      Wr(J + ' (Da …, эхэнд)', 'Es regnet. Wir bleiben zu Hause.', 'Da es regnet, bleiben wir zu Hause.'),
+      Wr(J + ' (weil)', 'Er lernt Deutsch. Er will in Deutschland studieren.', 'Er lernt Deutsch, weil er in Deutschland studieren will.'),
+      Wr(J + ' (Weil …, эхэнд)', 'Sie hat den Bus verpasst. Sie ist zu spät gekommen.', 'Weil sie den Bus verpasst hat, ist sie zu spät gekommen.'),
+      Wr(J + ' (Da …, эхэнд)', 'Der Laden war geschlossen. Ich konnte nichts kaufen.', 'Da der Laden geschlossen war, konnte ich nichts kaufen.'),
+      Wr(TR, 'Би ядарсан учраас эрт унтсан.', ['Ich bin früh schlafen gegangen, weil ich müde war.', 'Weil ich müde war, bin ich früh schlafen gegangen.', 'Da ich müde war, bin ich früh schlafen gegangen.', 'Ich bin früh ins Bett gegangen, weil ich müde war.', 'Weil ich müde war, bin ich früh ins Bett gegangen.', 'Ich ging früh schlafen, weil ich müde war.'], ['müde', 'schlafen gehen']),
+      Wr(TR, 'Цаг агаар сайхан байгаа учраас бид зугаалж байна.', ['Wir gehen spazieren, weil das Wetter schön ist.', 'Weil das Wetter schön ist, gehen wir spazieren.', 'Da das Wetter schön ist, gehen wir spazieren.'], ['das Wetter', 'spazieren gehen']),
+      Wr(TR, 'Ажил хайж байгаа учраас би герман хэл сурч байна.', ['Ich lerne Deutsch, weil ich eine Arbeit suche.', 'Ich lerne Deutsch, weil ich Arbeit suche.', 'Weil ich eine Arbeit suche, lerne ich Deutsch.', 'Da ich eine Arbeit suche, lerne ich Deutsch.'], ['die Arbeit', 'suchen'])
+    ]),
+    ue('ue17', 'Übung 17', 'Seite 43', 'obwohl · obschon · obgleich · trotzdem', [
+      Wr(J + ' (Obwohl …, эхэнд)', 'Er ist müde. Er arbeitet weiter.', 'Obwohl er müde ist, arbeitet er weiter.'),
+      Wr(J + ' (obwohl)', 'Sie hat wenig Geld. Sie kauft ein teures Handy.', 'Sie kauft ein teures Handy, obwohl sie wenig Geld hat.'),
+      Wr(J + ' (obwohl)', 'Es schneit. Die Kinder spielen draußen.', 'Die Kinder spielen draußen, obwohl es schneit.'),
+      Wr(J + ' (Obwohl …, эхэнд)', 'Ich habe viel gelernt. Ich habe die Prüfung nicht bestanden.', 'Obwohl ich viel gelernt habe, habe ich die Prüfung nicht bestanden.'),
+      Wr(J + ' (trotzdem)', 'Es regnet. Wir gehen spazieren.', ['Es regnet, trotzdem gehen wir spazieren.', 'Es regnet. Trotzdem gehen wir spazieren.'], [], 'trotzdem + үйл үг шууд.'),
+      Wr(TR, 'Хүйтэн байсан ч тэр (эр) куртикгүй гарсан.', ['Obwohl es kalt war, ging er ohne Jacke raus.', 'Obwohl es kalt war, ist er ohne Jacke rausgegangen.', 'Er ging ohne Jacke raus, obwohl es kalt war.', 'Obwohl es kalt war, ging er ohne Jacke hinaus.'], ['kalt', 'die Jacke', 'rausgehen'])
+    ]),
+    ue('ue18', 'Übung 18', 'Seite 45', 'wenn · als', [
+      Wr(J + ' (Als …, эхэнд)', 'Ich war klein. Ich wohnte auf dem Land.', 'Als ich klein war, wohnte ich auf dem Land.'),
+      Wr(J + ' (Wenn …, эхэнд)', 'Ich habe Zeit. Ich besuche dich.', 'Wenn ich Zeit habe, besuche ich dich.'),
+      Wr(J + ' (Als …, эхэнд)', 'Er kam nach Hause. Das Essen war schon kalt.', 'Als er nach Hause kam, war das Essen schon kalt.'),
+      Wr(J + ' (Immer wenn …, эхэнд)', 'Es regnete. Wir blieben zu Hause.', 'Immer wenn es regnete, blieben wir zu Hause.'),
+      Wr(TR, 'Би Германд ирэхдээ гучин настай байсан.', 'Als ich nach Deutschland kam, war ich dreißig Jahre alt.', ['kommen', 'alt']),
+      Wr(TR, 'Улаанбаатарт ирэхээрээ над руу залгаарай.', ['Wenn du nach Ulaanbaatar kommst, ruf mich an!', 'Ruf mich an, wenn du nach Ulaanbaatar kommst!'], ['kommen', 'anrufen'])
+    ]),
+    ue('ue19', 'Übung 19', 'Seite 47', 'während · solange', [
+      Wr(J + ' (Während …, эхэнд)', 'Ich koche. Mein Sohn macht Hausaufgaben.', 'Während ich koche, macht mein Sohn Hausaufgaben.'),
+      Wr(J + ' (Solange …, эхэнд)', 'Du bist krank. Du darfst nicht arbeiten.', 'Solange du krank bist, darfst du nicht arbeiten.'),
+      Wr(J + ' (während)', 'Er telefoniert. Er fährt Auto.', 'Er telefoniert, während er Auto fährt.'),
+      Wr(J + ' (solange)', 'Ich warte hier. Du kaufst ein.', 'Ich warte hier, solange du einkaufst.'),
+      Wr('während + Genitiv ашигла', 'der Urlaub · Ich habe viel gelesen.', 'Während des Urlaubs habe ich viel gelesen.'),
+      Wr(TR, 'Хүүхдүүд унтаж байх зуур бид кино үзсэн.', ['Während die Kinder schliefen, haben wir einen Film gesehen.', 'Während die Kinder schliefen, sahen wir einen Film.', 'Wir haben einen Film gesehen, während die Kinder schliefen.'], ['schlafen', 'der Film'])
+    ]),
+    ue('ue20', 'Übung 20', 'Seite 49', 'nachdem · sobald — цагийн дараалал!', [
+      Wr(J + ' (Nachdem …, эхэнд)', 'Er hatte gegessen. Er ging spazieren.', 'Nachdem er gegessen hatte, ging er spazieren.'),
+      Wr(J + ' (Nachdem …, эхэнд)', 'Ich habe die Arbeit beendet. Ich gehe nach Hause.', 'Nachdem ich die Arbeit beendet habe, gehe ich nach Hause.'),
+      Wr(J + ' (Nachdem …, Plusquamperfekt)', 'Sie kam an. Sie rief ihre Mutter an.', 'Nachdem sie angekommen war, rief sie ihre Mutter an.'),
+      Wr(J + ' (Nachdem …, Plusquamperfekt)', 'Wir frühstückten. Wir fuhren los.', 'Nachdem wir gefrühstückt hatten, fuhren wir los.'),
+      Wr(J + ' (Sobald …, эхэнд)', 'Ich bekomme die Nachricht. Ich schreibe dir.', 'Sobald ich die Nachricht bekomme, schreibe ich dir.'),
+      Wr(TR, 'Би гэртээ ирмэгцээ чам руу залгана.', ['Sobald ich zu Hause bin, rufe ich dich an.', 'Ich rufe dich an, sobald ich zu Hause bin.'], ['zu Hause', 'anrufen'])
+    ]),
+    ue('ue21', 'Übung 21', 'Seite 52', 'bevor · ehe', [
+      Wr(J + ' (bevor)', 'Ich frühstücke. Danach gehe ich zur Arbeit.', 'Ich frühstücke, bevor ich zur Arbeit gehe.'),
+      Wr(J + ' (bevor)', 'Wasch dir die Hände! Du isst.', ['Wasch dir die Hände, bevor du isst!', 'Wasch dir die Hände, bevor du isst.']),
+      Wr(J + ' (Bevor …, эхэнд)', 'Er lernte Deutsch. Dann ging er nach Deutschland.', 'Bevor er nach Deutschland ging, lernte er Deutsch.'),
+      Wr(J + ' (bevor)', 'Ruf mich an! Du kommst.', ['Ruf mich an, bevor du kommst!', 'Ruf mich an, bevor du kommst.']),
+      Wr(TR, 'Унтахаасаа өмнө би ном уншдаг.', ['Bevor ich schlafe, lese ich ein Buch.', 'Ich lese ein Buch, bevor ich schlafe.', 'Bevor ich schlafen gehe, lese ich ein Buch.', 'Ich lese ein Buch, bevor ich schlafen gehe.'], ['schlafen', 'lesen']),
+      Wr(TR, 'Ажлын ярилцлагад орохоосоо өмнө тэр (эр) их сандарсан.', ['Bevor er zum Vorstellungsgespräch ging, war er sehr nervös.', 'Er war sehr nervös, bevor er zum Vorstellungsgespräch ging.'], ['das Vorstellungsgespräch', 'nervös'])
+    ]),
+    ue('ue22', 'Übung 22', 'Seite 54', 'damit — субьект өөр (wollen/sollen-ийг хас!).', [
+      Wr(J + ' (damit)', 'Ich gebe dir mein Handy. Du kannst deine Mutter anrufen.', 'Ich gebe dir mein Handy, damit du deine Mutter anrufen kannst.'),
+      Wr(J + ' (damit)', 'Die Lehrerin spricht langsam. Die Schüler sollen sie verstehen.', 'Die Lehrerin spricht langsam, damit die Schüler sie verstehen.'),
+      Wr(J + ' (damit)', 'Wir kaufen ein Auto. Die Kinder sollen nicht mit dem Bus fahren.', 'Wir kaufen ein Auto, damit die Kinder nicht mit dem Bus fahren.'),
+      Wr(J + ' (damit)', 'Ich schreibe die Wörter auf. Ich will sie nicht vergessen.', 'Ich schreibe die Wörter auf, damit ich sie nicht vergesse.'),
+      Wr(J + ' (damit)', 'Mach das Fenster zu! Es soll nicht kalt werden.', ['Mach das Fenster zu, damit es nicht kalt wird!', 'Mach das Fenster zu, damit es nicht kalt wird.']),
+      Wr(TR, 'Хүү нь сайн сургуульд сураасай гэж эцэг эх нь Германд нүүсэн.', ['Die Eltern sind nach Deutschland gezogen, damit ihr Sohn eine gute Schule besucht.', 'Die Eltern sind nach Deutschland gezogen, damit ihr Sohn auf eine gute Schule geht.'], ['die Eltern', 'ziehen', 'besuchen'])
+    ]),
+    ue('ue23', 'Übung 23', 'Seite 55', 'um … zu — субьект ижил.', [
+      Wr(J + ' (um … zu)', 'Ich lerne Deutsch. Ich will in Deutschland arbeiten.', 'Ich lerne Deutsch, um in Deutschland zu arbeiten.'),
+      Wr(J + ' (um … zu)', 'Er geht in den Supermarkt. Er will Milch kaufen.', 'Er geht in den Supermarkt, um Milch zu kaufen.'),
+      Wr(J + ' (um … zu)', 'Sie spart Geld. Sie will eine Reise machen.', 'Sie spart Geld, um eine Reise zu machen.'),
+      Wr(J + ' (um … zu)', 'Wir stehen früh auf. Wir wollen den Zug nicht verpassen.', 'Wir stehen früh auf, um den Zug nicht zu verpassen.'),
+      Wr(J + ' (um … zu)', 'Ich rufe an. Ich will einen Termin vereinbaren.', 'Ich rufe an, um einen Termin zu vereinbaren.'),
+      Wr(TR, 'Би ажил олохын тулд B2 шалгалт өгнө.', ['Ich mache die B2-Prüfung, um eine Arbeit zu finden.', 'Ich mache die B2-Prüfung, um Arbeit zu finden.', 'Um eine Arbeit zu finden, mache ich die B2-Prüfung.'], ['die Prüfung', 'finden'])
+    ]),
+    ue('ue24', 'Übung 24', 'Seite 55', 'damit уу, um … zu юу? — сонгож, бич.', [
+      Mc('Ich lerne viel, ___ ich die Prüfung bestehe.', ['damit', 'um'], 'damit', 'Nebensatz-д субьект + хувиргасан үйл үг байгаа → damit.'),
+      Mc('Er joggt jeden Tag, ___ fit zu bleiben.', ['um', 'damit'], 'um'),
+      Mc('Ich erkläre es dir noch einmal, ___ du es verstehst.', ['damit', 'um'], 'damit', 'Субьект өөр (ich / du) → damit.'),
+      Mc('Sie nimmt ein Taxi, ___ pünktlich zu sein.', ['um', 'damit'], 'um'),
+      Wr(J, 'Wir sprechen leise. Das Baby soll schlafen.', 'Wir sprechen leise, damit das Baby schläft.'),
+      Wr(J, 'Er trainiert hart. Er will die Meisterschaft gewinnen.', 'Er trainiert hart, um die Meisterschaft zu gewinnen.')
+    ]),
+    ue('ue25', 'Übung 25', 'Seite 56', 'so dass · so …, dass', [
+      Wr(J + ' (so dass)', 'Es regnete stark. Die Straßen waren nass.', ['Es regnete stark, so dass die Straßen nass waren.', 'Es regnete stark, sodass die Straßen nass waren.']),
+      Wr(J + ' (so …, dass)', 'Er war sehr müde. Er schlief sofort ein.', 'Er war so müde, dass er sofort einschlief.'),
+      Wr(J + ' (so …, dass)', 'Der Kaffee ist sehr heiß. Ich kann ihn nicht trinken.', 'Der Kaffee ist so heiß, dass ich ihn nicht trinken kann.'),
+      Wr(J + ' (so dass)', 'Sie hat viel gelernt. Sie hat die Prüfung bestanden.', ['Sie hat viel gelernt, so dass sie die Prüfung bestanden hat.', 'Sie hat viel gelernt, sodass sie die Prüfung bestanden hat.']),
+      Wr(TR, 'Би их ядарсан тул шууд унтчихсан.', ['Ich war so müde, dass ich sofort eingeschlafen bin.', 'Ich war so müde, dass ich sofort einschlief.', 'Ich war sehr müde, so dass ich sofort eingeschlafen bin.'], ['müde', 'einschlafen']),
+      Wr(TR, 'Тэр (эр) маш хурдан ярьдаг тул би ойлгодоггүй.', ['Er spricht so schnell, dass ich ihn nicht verstehe.', 'Er spricht so schnell, dass ich nichts verstehe.'], ['sprechen', 'schnell', 'verstehen'])
+    ]),
+    ue('ue26', 'Übung 26', 'Seite 57', 'ohne dass · ohne … zu', [
+      Wr(J + ' (ohne … zu)', 'Er ging weg. Er sagte nichts.', 'Er ging weg, ohne etwas zu sagen.', [], 'nichts → ohne etwas zu sagen.'),
+      Wr(J + ' (ohne … zu)', 'Sie nahm mein Buch. Sie fragte mich nicht.', 'Sie nahm mein Buch, ohne mich zu fragen.'),
+      Wr(J + ' (ohne dass)', 'Er verließ das Haus. Niemand bemerkte es.', 'Er verließ das Haus, ohne dass es jemand bemerkte.'),
+      Wr(J + ' (ohne … zu)', 'Ich habe den Test geschrieben. Ich habe nicht gelernt.', 'Ich habe den Test geschrieben, ohne zu lernen.'),
+      Wr(J + ' (ohne dass)', 'Die Kinder spielten. Die Eltern wussten es nicht.', 'Die Kinder spielten, ohne dass die Eltern es wussten.'),
+      Wr(TR, 'Тэр (эр) баяртай гэлгүй явсан.', ['Er ist gegangen, ohne Tschüss zu sagen.', 'Er ging, ohne Tschüss zu sagen.', 'Er ist gegangen, ohne sich zu verabschieden.', 'Er ging, ohne sich zu verabschieden.'], ['gehen', 'sich verabschieden'])
+    ]),
+    ue('ue27', 'Übung 27', 'Seite 59', 'indem · dadurch, dass', [
+      Wr(J + ' (indem)', 'Man lernt eine Sprache. Man spricht viel.', 'Man lernt eine Sprache, indem man viel spricht.'),
+      Wr(J + ' (indem)', 'Er hält sich fit. Er fährt jeden Tag Fahrrad.', 'Er hält sich fit, indem er jeden Tag Fahrrad fährt.'),
+      Wr(J + ' (dadurch, dass)', 'Sie spart Geld. Sie kocht zu Hause.', ['Sie spart Geld dadurch, dass sie zu Hause kocht.', 'Sie spart dadurch Geld, dass sie zu Hause kocht.']),
+      Wr('indem ашиглан хариул', 'Wie hast du die Wohnung gefunden? — Ich habe im Internet gesucht.', 'Ich habe die Wohnung gefunden, indem ich im Internet gesucht habe.'),
+      Wr(J + ' (indem)', 'Man kann Energie sparen. Man schaltet das Licht aus.', 'Man kann Energie sparen, indem man das Licht ausschaltet.'),
+      Wr(TR, 'Би үгсээ өдөр бүр давтаж цээжилдэг.', ['Ich lerne die Wörter, indem ich sie jeden Tag wiederhole.', 'Ich lerne Wörter, indem ich sie jeden Tag wiederhole.'], ['lernen', 'wiederholen'])
+    ])
+  );
+  WORKBOOK.find(u => u.id === 'ue1').page = 'Seite 2';
+  WORKBOOK.find(u => u.id === 'ue2').page = 'Seite 5';
+
+  /* Курсийн дараалал — Inhaltsverzeichnis */
+  const COURSE = [
+    { nr: 1, title: 'Die Vergangenheiten', lesson: 'vergangenheit', ues: ['ue1', 'ue2', 'ue3', 'ue4', 'ue5', 'ue6', 'ue7', 'ue8'] },
+    { nr: 2, title: 'Der dass-Satz', lesson: 'dass', ues: ['ue9'] },
+    { nr: 3, title: 'Der Infinitiv-zu Satz', lesson: 'infinitivzu', ues: ['ue10', 'ue11', 'ue12'] },
+    { nr: 4, title: 'Der ob-Satz', lesson: 'ob', ues: ['ue13'] },
+    { nr: 5, title: 'Der W-Satz', lesson: 'wsatz', ues: ['ue14'] },
+    { nr: 6, title: 'Modale Nebensätze mit „anstatt dass“ und „anstatt … zu“', lesson: 'anstatt', ues: ['ue15'] },
+    { nr: 7, title: 'Kausale Nebensätze mit „weil“ und „da“', lesson: 'weil', ues: ['ue16'] },
+    { nr: 8, title: 'Konzessive Nebensätze mit „obwohl, obschon, obgleich“', lesson: 'obwohl', ues: ['ue17'] },
+    { nr: 9, title: 'Temporale Nebensätze mit „wenn“ und „als“', lesson: 'wennals', ues: ['ue18'] },
+    { nr: 10, title: 'Temporale Nebensätze mit „während“ und „solange“', lesson: 'waehrend', ues: ['ue19'] },
+    { nr: 11, title: 'Temporale Nebensätze mit „nachdem“ und „sobald“', lesson: 'nachdem', ues: ['ue20'] },
+    { nr: 12, title: 'Temporale Nebensätze mit „bevor“ und „ehe“', lesson: 'bevor', ues: ['ue21'] },
+    { nr: 13, title: 'Finale Nebensätze mit „damit“ und „um … zu“', lesson: 'damit', ues: ['ue22', 'ue23', 'ue24'] },
+    { nr: 14, title: 'Konsekutive Nebensätze mit „so dass“, „ohne dass“ und „ohne … zu“', lesson: 'sodass', ues: ['ue25', 'ue26'] },
+    { nr: 15, title: 'Modale Nebensätze mit „indem“ und „dadurch, dass“', lesson: 'indem', ues: ['ue27'] }
+  ];
+
   /* ---------- Дүрмийн хичээлүүд ---------- */
   const mc = (q, options, answer, explain) => ({ type: 'mc', q, options, answer, explain });
   const inp = (q, answers, explain, hint) => ({ type: 'input', q, answers: [].concat(answers), explain, hint });
@@ -398,7 +702,11 @@
         '<b>Perfekt = haben / sein + Partizip II</b>. Partizip II өгүүлбэрийн хамгийн төгсгөлд очно.',
         '<b>Transitiv</b> үйл үг (Akkusativ объект авдаг) → үргэлж <b>haben</b>. <b>Intransitiv</b> үйл үг: байрлал эсвэл төлөв өөрчлөгдөх бол <b>sein</b> (gehen, kommen, reisen, ankommen, einschlafen), бусад нь <b>haben</b>.',
         'Анхаар: <b>bekommen</b> нь kommen-тэй төстэй ч Akkusativ объект авдаг тул <b>haben</b>: <i>Ich habe einen Brief bekommen.</i>',
-        'Partizip II: сул үйл үг <b>ge-…-t</b> (gekauft), хүчтэй <b>ge-…-en</b> (geholfen). Салдаг угтвар: <b>ein·ge·kauft, an·ge·kommen</b>. Be-, ver-, er-, ent-, zer- угтвартай болон <b>-ieren</b>-ээр төгссөн үйл үгэнд <b>ge- нэмэхгүй</b>: verkauft, bekommen, korrigiert.'
+        'Partizip II: сул үйл үг <b>ge-…-t</b> (gekauft), хүчтэй <b>ge-…-en</b> (geholfen). Салдаг угтвар: <b>ein·ge·kauft, an·ge·kommen</b>. Be-, ver-, er-, ent-, zer- угтвартай болон <b>-ieren</b>-ээр төгссөн үйл үгэнд <b>ge- нэмэхгүй</b>: verkauft, bekommen, korrigiert.',
+        '<b>Präteritum-ийн төгсгөл:</b> -, -st, -, -en, -t, -en. ich ба er хэлбэр төгсгөлгүй, ижил. ß/s/z-ээр төгсвөл du-д зөвхөн <b>-t</b>: ich saß, <b>du saßt</b>, er saß, wir saßen, <b>ihr saßt</b>, sie saßen.',
+        '<b>Genitiv:</b> die Brille <b>ihrer Oma</b> ✓ · <b>Omas</b> Brille ✓ · <s>ihrer Omas Brille</s> ✗. Нэрийн өмнөх -s Genitiv артикльгүй: Opas Hemd ✓, <s>meines Opas Hemd</s> ✗. Стандарт: das Hemd meines Opas.',
+        '<b>Эзэмшлийн төлөөний үг</b> эзэмшигчийн хүйсийг дагана: er → <b>seine</b> Katze, sie → <b>ihre</b> Katze. Монгол «-аа» (өөрийн) → эзэмшигчийнхээ хүйсээр.',
+        '<b>Тоо, тийн ялгал:</b> die Feuerwehr = ганц тоо → <b>rettet</b>. Akkusativ олон тоо: alle <b>Bewohner</b> (-n зөвхөн Dativ олон тоонд: mit allen Bewohnern). Язгуур -t-ээр төгсвөл: er rett<b>e</b>t, rett<b>e</b>te.'
       ],
       table: {
         head: ['Präsens', 'Präteritum', 'Perfekt'],
@@ -847,6 +1155,38 @@
     { de: 'Nicht ganz. Lies die Erklärung.', mn: 'Яг биш. Тайлбарыг уншаарай.' },
     { de: 'Das ist schwer, aber du schaffst das!', mn: 'Хэцүү ч чи чадна!' }
   ];
+  /* Багшийн сэтгэл хөдлөл: магтаал (дараалсан зөв хариултаар хүчтэй болно) */
+  const PRAISE_BIG = [
+    { de: 'Bravo! Ich bin so stolz auf dich!', mn: 'Браво! Чамаар бахархаж байна!' },
+    { de: 'Fantastisch! Wie ein Muttersprachler!', mn: 'Гайхамшигтай! Яг л уугуул хүн шиг!' },
+    { de: 'Wunderbar! Das ist B2-Niveau!', mn: 'Гоё! Энэ чинь B2 түвшин!' },
+    { de: 'Genial! Du bist ein Star!', mn: 'Суут! Чи бол од!' },
+    { de: 'Ich könnte weinen vor Freude!', mn: 'Баярласандаа уйлмаар байна!' }
+  ];
+  /* Загнах: 1 = зөөлөн, 2 = бурханд залбирах, 3 = цөхрөнгөө барах */
+  const SCOLD = {
+    1: [
+      { de: 'Nein, nein, nein!', mn: 'Үгүй, үгүй, үгүй!' },
+      { de: 'Konzentration, bitte!', mn: 'Анхаарлаа төвлөрүүл!' },
+      { de: 'Das tut mir in den Ohren weh!', mn: 'Чих минь өвдөж байна!' },
+      { de: 'Wie oft habe ich das schon erklärt?', mn: 'Би үүнийг хэдэн удаа тайлбарласан бэ?' },
+      { de: 'Ach du lieber Himmel!', mn: 'Ай тэнгэр минь!' }
+    ],
+    2: [
+      { de: 'Oh Jesus, Maria und Josef!', mn: 'Есүс, Мариа, Иосеф минь ээ!' },
+      { de: 'Lieber Buddha, gib mir Geduld!', mn: 'Бурхан Будда минь, надад тэвчээр өгөөч!' },
+      { de: 'Allmächtiger! Hilf mir!', mn: 'Хүчит бурхан минь! Туслаач!' },
+      { de: 'Um Gottes willen!', mn: 'Бурхны минь хайраар!' },
+      { de: 'Heiliger Strohsack!', mn: 'Ариун сүрлэн шуудай минь! (Герман хараал)' },
+      { de: 'Herr, schmeiß Hirn vom Himmel!', mn: 'Бурхан минь, тэнгэрээс тархи шидээч!' }
+    ],
+    3: [
+      { de: 'Mein Gott! Das gibt es doch nicht!', mn: 'Бурхан минь! Ийм юм байх гэж!' },
+      { de: 'Oh Buddha, Jesus und alle Heiligen! Warum?!', mn: 'Будда, Есүс, бүх гэгээнтнүүд ээ! Яагаад?!' },
+      { de: 'Ich gebe auf! Nein, ich gebe nicht auf. Noch einmal!', mn: 'Би бууж өглөө! Үгүй ээ, өгөхгүй. Дахиад!' },
+      { de: 'Himmel, Herrgott, Sakrament!', mn: 'Тэнгэр, бурхан, ариун ёслол минь! (Баварь хараал)' }
+    ]
+  };
   const TIPS = [
     { de: 'Lerne Nomen immer mit Artikel!', mn: 'Нэр үгийг үргэлж артикльтай нь цээжил!' },
     { de: 'Verb am Ende — im Nebensatz!', mn: 'Nebensatz-д үйл үг төгсгөлд очно!' },
@@ -858,5 +1198,5 @@
     { de: 'Für B2: Lies jeden Tag einen kurzen Zeitungsartikel.', mn: 'B2-д: өдөр бүр нэг богино мэдээ унш.' }
   ];
 
-  window.DL_DATA = { IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
+  window.DL_DATA = { PRAISE_BIG, SCOLD, COURSE, IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
 })();

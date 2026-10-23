@@ -30,7 +30,13 @@ window.APP_CONFIG = {
       happy: 'Happy',
       sad: 'Sad',
       wave: 'Wave',
-      think: 'Think'
+      think: 'Think',
+      clap: 'Clap',         // алга ташина (байхгүй бол happy)
+      cheer: 'Cheer',       // эргэлдэж баярлана (байхгүй бол happy)
+      scold: 'Scold',       // хуруугаараа сүрдүүлж загнана (байхгүй бол sad)
+      pray: 'Pray',         // бурханд залбирна (байхгүй бол sad)
+      facepalm: 'Facepalm', // нүүрээ таглана (байхгүй бол sad)
+      despair: 'Despair'    // «Яагаад?!» гэж цөхөрнө (байхгүй бол sad)
     },
     /* Ам хөдөлгөх morph target-ийн нэр (null бол автоматаар хайна:
        mouthOpen, jawOpen, viseme_aa ...) */
