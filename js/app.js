@@ -394,6 +394,7 @@
   /* ---------------- Чиглүүлэгч (router) ---------------- */
   const NAV = [
     { r: 'home', i: 'home', t: 'Start' },
+    { r: 'unterricht', i: 'clock', t: 'Unterricht', s: 'Хичээл' },
     { r: 'grammatik', i: 'book', t: 'Grammatik', s: 'Regeln' },
     { r: 'starke', i: 'bolt', t: 'Starke Verben', s: 'Verben' },
     { r: 'uebungen', i: 'pencil', t: 'Kurs · Übungen', s: 'Kurs' },
@@ -407,7 +408,7 @@
     home: ['DEUTSCH', 'LERNEN', 'B2'], grammatik: ['GRAMMATIK'], lesson: ['REGEL'], uebungen: ['KURS'], workbook: ['SCHREIBEN'], mix: ['MIX'],
     wortschatz: ['WÖRTER'], karten: ['KARTEN'], quiz: ['QUIZ'], tippen: ['TIPPEN'], hoeren: ['HÖREN'],
     spiele: ['SPIELE'], artikel: ['DER', 'DIE', 'DAS'], verben: ['VERBEN'], habensein: ['HABEN', 'SEIN'], satzbau: ['SATZ'], memory: ['MEMORY'],
-    fehler: ['FEHLER'], fortschritt: ['B2'], klasse: ['KLASSE'],
+    fehler: ['FEHLER'], fortschritt: ['B2'], klasse: ['KLASSE'], unterricht: ['HEUTE'], stunde: ['HEUTE'],
     starke: ['STARKE', 'VERBEN'], vgruppe: ['MUSTER'], vdrill: ['STAMM', 'FORMEN']
   };
   let disposers = [];
@@ -436,7 +437,7 @@
     const view = $('#view');
     view.innerHTML = '';
     fn(view, arg);
-    const navKey = { lesson: 'grammatik', workbook: 'uebungen', mix: 'uebungen', karten: 'wortschatz', quiz: 'wortschatz', tippen: 'wortschatz', hoeren: 'wortschatz', artikel: 'spiele', verben: 'spiele', habensein: 'spiele', satzbau: 'spiele', memory: 'spiele', vgruppe: 'starke', vdrill: 'starke' }[r] || r;
+    const navKey = { lesson: 'grammatik', workbook: 'uebungen', mix: 'uebungen', karten: 'wortschatz', quiz: 'wortschatz', tippen: 'wortschatz', hoeren: 'wortschatz', artikel: 'spiele', verben: 'spiele', habensein: 'spiele', satzbau: 'spiele', memory: 'spiele', vgruppe: 'starke', vdrill: 'starke', stunde: 'unterricht' }[r] || r;
     $$('#nav a, #bottom-nav a').forEach(a => a.classList.toggle('active', a.dataset.r === navKey));
     Ascii.setWords(ASCII_WORDS[r] || ASCII_WORDS.home);
     window.scrollTo(0, 0);
@@ -446,7 +447,7 @@
   /* ---------------- Хүрээ (nav, stats) ---------------- */
   function buildChrome() {
     $('#nav').innerHTML = NAV.map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.t}</span>${n.r === 'fehler' ? '<span class="count" id="mcount" hidden></span>' : ''}</a>`).join('');
-    $('#bottom-nav').innerHTML = NAV.filter(n => n.r !== 'fehler' && n.r !== 'grammatik').map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.s || n.t}</span></a>`).join('');
+    $('#bottom-nav').innerHTML = NAV.filter(n => !['fehler', 'grammatik', 'unterricht'].includes(n.r)).map(n => `<a href="#${n.r}" data-r="${n.r}">${icon(n.i)}<span>${n.s || n.t}</span></a>`).join('');
     $('#t-name').textContent = CFG.teacher.name;
     $('#t-role').textContent = CFG.teacher.role;
     const vb = $('#t-voice'), mb = $('#t-mini');
@@ -564,7 +565,7 @@
         S.stats.bestCombo = Math.max(S.stats.bestCombo, combo);
         let xp = res.typo || usedHint ? 6 : 10;
         if (combo >= 3) xp += 2 * Math.min(combo - 2, 5);
-        if (it.type === 'tense3') xp = Math.round(xp * 1.8);
+        if (it.type === 'tense3' || it.type === 'steps') xp = Math.round(xp * 1.8);
         if (it.type === 'vforms') xp = Math.round(xp * 1.5);
         addXP(xp, card);
         if (opts.mode === 'mistakes') removeMistake(it);
@@ -856,6 +857,37 @@
         }
       };
     },
+    steps(card, it) {
+      const rows = it.rows;
+      card.insertAdjacentHTML('afterbegin', `<div class="label">HS → NS → ${esc(rows[2].l)}</div>
+        <div class="q q-mn">${esc(it.mn)}</div>
+        ${it.hints && it.hints.length ? `<div class="hints">${it.hints.map(h => { const w = W.find(x => wordLabel(x) === h || x.de === h); return `<button type="button" class="hint-chip" data-hw="${esc(h)}" data-mn="${esc(w ? w.mn : h)}">${esc(w ? w.mn : h)}</button>`; }).join('')}</div>` : ''}
+        <div class="tense-rows">${rows.map((r, k) => `<div class="tense-row"><span class="tl">${esc(r.l)}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${k === 0 ? 'Гол өгүүлбэр…' : k === 1 ? 'Туслах өгүүлбэр…' : (it.conj === 'ob' ? '…, ob …' : '…, dass …')}"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
+        ${umlautBar()}`);
+      $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
+        const show = !c.classList.contains('revealed');
+        c.classList.toggle('revealed', show); c.textContent = show ? c.dataset.hw : c.dataset.mn;
+        if (show) speak(c.dataset.hw);
+      }));
+      const fields = $$('input[data-t]', card);
+      fields.forEach((f, k) => f.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && k < 2 && !f.readOnly) { e.preventDefault(); e.stopPropagation(); fields[k + 1].focus(); }
+      }));
+      return {
+        hint() { $$('.hint-chip', card).forEach(c => { if (!c.classList.contains('revealed')) c.click(); }); fields[0].placeholder = rows[0].a[0].split(' ').slice(0, 2).join(' ') + ' …'; },
+        check() {
+          if (fields.every(f => !f.value.trim())) { fields[0].focus(); return null; }
+          let good = 0; const wrongParts = [];
+          rows.forEach((r, k) => {
+            const f = fields[k], res = judge(f.value, r.a);
+            f.readOnly = true; f.classList.add(res.ok ? 'ok' : 'bad');
+            if (res.ok) good++; else wrongParts.push({ type: 'input', label: r.l, q: `${it.mn} → ${r.l}`, answers: r.a });
+            $(`[data-fb="${k}"]`, card).innerHTML = res.ok && !res.typo ? '' : `<span class="diff">${res.ok ? 'Бичлэг: ' : ''}${diffHTML(res.expected, f.value)}</span> ${sayBtn(res.expected)}`;
+          });
+          return { ok: good === rows.length, frac: good / rows.length, parts: [good, rows.length], wrongParts: good === rows.length ? null : wrongParts, sayAnswer: rows[2].a[0], feedbackHTML: '' };
+        }
+      };
+    },
     vforms(card, it) {
       const vb = it.v;
       const grp = D.IRREG_GROUPS.find(g => g.k === vb.g);
@@ -973,6 +1005,7 @@
           <div class="ring-txt"><b>${done}</b><span>/ ${goal} XP</span></div>
         </div>
       </section>
+      ${D.UNTERRICHT.length ? (() => { const u = D.UNTERRICHT[D.UNTERRICHT.length - 1]; return `<a class="tile" href="#stunde-${u.date}" style="flex-direction:row;align-items:center;gap:16px"><span class="tile-ico">${icon('clock')}</span><span style="display:grid;gap:2px;min-width:0"><span class="label">Сүүлийн хичээл · ${u.date.split('-').reverse().join('.')}</span><span class="h-card">${esc(u.title)}</span><span class="muted" style="font-size:13px">Хичээлээ давтах — ${u.lessons.length} дүрэм, ${u.ues.length} дасгал</span></span><span style="margin-left:auto">${icon('arrow')}</span></a>`; })() : ''}
       <div class="stats4">
         <div class="stat"><span class="label">Level</span><b>${L}</b><span class="muted" style="font-size:13px">${titleOf(L)}</span></div>
         <div class="stat"><span class="label">XP</span><b>${S.xp}</b><span class="muted" style="font-size:13px">нийт</span></div>
@@ -1083,6 +1116,9 @@
         out.push({ type: 'tiles', q: it.mn, sub: TN[k], answer: it[k][0], distract: distractors(it[k][0]) });
       } else if (it.type === 'write') {
         out.push({ type: 'tiles', q: it.prompt, sub: it.task, label: /[а-яөүё]/i.test(it.prompt) ? 'Герман өгүүлбэрийг үгсээс угсар' : 'Нийлүүлсэн өгүүлбэрийг угсар', answer: it.answers[0], distract: distractors(it.answers[0]) });
+      } else if (it.type === 'steps') {
+        const a = it.rows[2].a[0];
+        out.push({ type: 'tiles', q: it.mn, sub: it.rows[2].l, answer: a, distract: distractors(a) });
       } else if (it.type === 'tiles') out.push(it);
     });
     return out;
@@ -1125,7 +1161,7 @@
           const u = WB(id), r = S.workbook[id] || {};
           return `<a class="ue-row ${r.best >= 80 ? 'done' : ''} ${nx.u.id === id ? 'next' : ''}" href="#workbook-${id}">
             <span class="ue-t"><b>${esc(u.title)}</b> <span class="muted mono" style="font-size:12px">${esc(u.page)} · ${u.items.length}</span><span class="ue-mn">${esc(u.mn)}</span></span>
-            <span class="pill ${u.made ? '' : 'gold'}">${u.made ? 'зохиосон' : 'номоос'}</span>
+            <span class="pill ${u.made ? '' : 'gold'}">${u.made ? (u.src || 'зохиосон') : 'номоос'}</span>
             <span class="progress ok"><i style="width:${r.best || 0}%"></i></span>
             <span class="mono muted ue-pct">${r.best != null ? r.best + '%' : '—'}</span></a>`;
         }).join('')}</div>
@@ -1142,7 +1178,7 @@
     const nxt = afterUebung(id);
     v.innerHTML = `${topbar((chap ? 'Kapitel ' + chap.nr + ' · ' : '') + u.title + ' · ' + u.page, 'uebungen')}
       <div class="lesson-head">
-        <div class="row-flex"><span class="pill ${u.made ? '' : 'gold'}">${u.made ? 'зохиосон дасгал' : 'номын дасгал'}</span>${chap ? `<a class="pill" href="#lesson-${chap.lesson}" style="text-decoration:none">${icon('book')} ${esc(chap.title)}</a>` : ''}</div>
+        <div class="row-flex"><span class="pill ${u.made ? '' : 'gold'}">${u.made ? (u.src || 'зохиосон дасгал') : 'номын дасгал'}</span>${chap ? `<a class="pill" href="#lesson-${chap.lesson}" style="text-decoration:none">${icon('book')} ${esc(chap.title)}</a>` : ''}</div>
         <h1 class="h-hero">${esc(u.title)}</h1><p class="sub-mn" style="margin:0">${esc(u.mn)}</p>
         <div class="seg" style="justify-self:start"><a class="${tilesMode ? '' : 'on'}" href="#workbook-${id}">${icon('pencil')} Бичих</a><a class="${tilesMode ? 'on' : ''}" href="#workbook-${id}~tiles">${icon('puzzle')} Үг байрлуулах</a></div></div><div id="wb-host"></div>`;
     if (tilesMode && !items.length) { $('#wb-host', v).innerHTML = `<div class="panel empty">Энэ дасгалд үг байрлуулах хувилбар алга. Бичих горимоор хийгээрэй.</div>`; return; }
@@ -1697,7 +1733,7 @@
     host.innerHTML = `<div class="row-flex"><button class="btn gold" id="fstart">${icon('refresh')} Бүгдийг давтах (${Math.min(15, S.mistakes.length)})</button><button class="btn ghost" id="fclear">Цэвэрлэх</button></div>
       <section class="panel tight" style="margin-top:16px;padding:0">${S.mistakes.map(m => {
         const it = m.item;
-        const ans = it.answer || (it.answers && it.answers[0]) || (it.pf && it.pf[0]) || (it.v ? `${it.v.inf} – ${it.v.er} – ${it.v.prat} – ${it.v.perf}` : '');
+        const ans = it.answer || (it.answers && it.answers[0]) || (it.pf && it.pf[0]) || (it.rows && it.rows[2].a[0]) || (it.v ? `${it.v.inf} – ${it.v.er} – ${it.v.prat} – ${it.v.perf}` : '');
         return `<div class="mistake"><span class="label">${esc(m.topic || '')}</span><div>${gapify(it.q || it.mn)}</div>${m.user ? `<div class="mu">${esc(m.user)}</div>` : ''}<div class="mc">${esc(ans)} ${/[a-zäöüß]/i.test(ans) ? sayBtn(ans) : ''}</div></div>`;
       }).join('')}</section>`;
     $('#fstart', v).addEventListener('click', () => {
@@ -1772,6 +1808,42 @@
     vb.innerHTML = icon(S.settings.voice ? 'speaker' : 'mute');
     vb.classList.toggle('on', S.settings.voice);
   }
+
+  /* ---------- Хичээлийн өдрийн тэмдэглэл ---------- */
+  const fmtDate = d => d.split('-').reverse().join('.');
+  VIEWS.unterricht = function (v) {
+    v.innerHTML = `${topbar('Unterricht')}
+      <div class="lesson-head"><h1 class="h-hero">Unterricht</h1><p class="sub-mn" style="margin:0">Анги дээр үзсэн хичээл бүр — товч тэмдэглэл, засвар, тухайн өдрийн дасгал.</p></div>
+      <div class="grid">${D.UNTERRICHT.slice().reverse().map(u => `<a class="tile" href="#stunde-${u.date}">
+        <span class="nr">${fmtDate(u.date)}</span><span class="h-card">${esc(u.title)}</span>
+        <span class="muted">${esc(u.points[0])}</span>
+        <span class="tile-foot">${u.lessons.length} дүрэм · ${u.ues.length} дасгал</span></a>`).join('')}</div>`;
+  };
+  VIEWS.stunde = function (v, date) {
+    const u = D.UNTERRICHT.find(x => x.date === date) || D.UNTERRICHT[D.UNTERRICHT.length - 1];
+    if (!u) return VIEWS.unterricht(v);
+    const lessons = u.lessons.map(id => D.LESSONS.find(l => l.id === id)).filter(Boolean);
+    const ues = u.ues.map(id => D.WORKBOOK.find(x => x.id === id)).filter(Boolean);
+    v.innerHTML = `${topbar('Unterricht · ' + fmtDate(u.date), 'unterricht')}
+      <div class="lesson-head"><span class="pill gold" style="justify-self:start">${fmtDate(u.date)}</span><h1 class="h-hero">${esc(u.title)}</h1></div>
+      <section class="panel"><div class="label" style="margin-bottom:14px">Гол санаа</div>
+        <div class="rules">${u.points.map((p, k) => `<div class="rule"><span class="dot">${k + 1}</span><div>${esc(p)}</div></div>`).join('')}</div></section>
+      ${u.fixes && u.fixes.length ? `<section class="panel"><div class="label" style="margin-bottom:12px">Тэмдэглэлийн засвар</div>
+        <div style="display:grid;gap:10px">${u.fixes.map(([a, b]) => `<div class="row-flex" style="gap:10px"><span class="mu" style="color:var(--bad);text-decoration:line-through">${esc(a)}</span>${icon('arrow')}<b style="color:var(--ok)">${esc(b)}</b>${sayBtn(b)}</div>`).join('')}</div></section>` : ''}
+      <section class="panel" style="display:grid;gap:12px"><div class="label">Энэ хичээлийг давтах</div>
+        <button class="btn gold" id="stunde-mix" style="justify-self:start">${icon('shuffle')} Холимог дасгал (12)</button>
+        <div class="grid c2">
+          ${lessons.map(l => `<a class="tile" href="#lesson-${l.id}"><span class="nr">Дүрэм</span><span class="h-card">${esc(l.title)}</span><span class="muted">${esc(l.mn)}</span></a>`).join('')}
+          ${ues.map(x => `<a class="tile" href="#workbook-${x.id}"><span class="nr">Дасгал · ${esc(x.page)}</span><span class="h-card">${esc(x.title)}</span><span class="muted">${esc(x.mn)}</span></a>`).join('')}
+        </div></section>
+      <div id="stunde-host"></div>`;
+    $('#stunde-mix', v).addEventListener('click', () => {
+      const pool = lessons.flatMap(l => l.items).concat(ues.flatMap(x => x.items.filter(it => it.type === 'steps')));
+      const host = $('#stunde-host', v);
+      runSession(host, sample(pool, Math.min(12, pool.length)), { title: u.title, topic: 'Unterricht ' + fmtDate(u.date), onQuit: () => render() });
+      host.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+    });
+  };
 
   /* ---------- Анги (жагсаалт) ---------- */
   VIEWS.klasse = function (v) {

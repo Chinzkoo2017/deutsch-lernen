@@ -123,6 +123,18 @@
     V('hängen', 'өлгөөтэй байх (hing) / өлгөх (hängte)', 'hing / hängte', 'hat gehangen / hat gehängt', ['tafel']),
     V('antworten', 'хариулах (+Dativ)', 'antwortete', 'hat geantwortet', ['tafel']),
     V('warten', 'хүлээх', 'wartete', 'hat gewartet', ['tafel']),
+    // 2026-10-24 хичээл: Akkusativ шаарддаг үйл үг
+    V('brauchen', 'хэрэгтэй байх', 'brauchte', 'hat gebraucht', ['akk']),
+    V('bestehen', '1. (aus) бүрдэх · 2. (шалгалтанд) тэнцэх', 'bestand', 'hat bestanden', ['akk']),
+    V('besuchen', '1. зочлох · 2. (курст) суух', 'besuchte', 'hat besucht', ['akk']),
+    V('fragen', 'асуух', 'fragte', 'hat gefragt', ['akk']),
+    V('heiraten', 'гэрлэх', 'heiratete', 'hat geheiratet', ['akk']),
+    V('operieren', 'хагалгаа хийх', 'operierte', 'hat operiert', ['akk']),
+    V('stören', 'саад болох', 'störte', 'hat gestört', ['akk']),
+    V('kennenlernen', 'танилцах', 'lernte kennen', 'hat kennengelernt', ['akk']),
+    V('erreichen', '1. (зорилгод) хүрэх · 2. (унаанд) амжиж суух · 3. (хүнтэй) холбогдох', 'erreichte', 'hat erreicht', ['akk']),
+    V('hoffen', 'найдах', 'hoffte', 'hat gehofft', ['dass']),
+    V('vermuten', 'таамаглах', 'vermutete', 'hat vermutet', ['dass']),
     A('weiß', 'цагаан', ['ue1'])
   ];
   /* ---------- Дүрмийн бус (хүчтэй) үйл үг ----------
@@ -327,6 +339,7 @@
     w.idx = i;
   });
   IRREG.forEach(v => { v.wid = v.inf; });
+  ['haben', 'bitten', 'treffen', 'anrufen'].forEach(inf => { const w = VOCAB.find(x => x.type === 'verb' && x.de === inf); if (w && !w.tags.includes('akk')) w.tags.push('akk'); });
 
   /* ---------- Хүчтэй/сул үйл үгийн 3 хэлбэр (Verb-Blitz) ---------- */
   const VERBFORMS = VOCAB.filter(w => w.type === 'verb' && !w.prat.includes('/'))
@@ -440,6 +453,8 @@
      Тэмдэглэл: Übung 1 (1–7) нь номын яг өгүүлбэр. Бусад нь номын
      сэдэв, хичээлийн үйл үгээр зохиосон бичгийн дасгал. Номын жинхэнэ
      хуудсыг авбал энэ өгүүлбэрүүдийг сольж болно. */
+  const ST = (mn, hints, hs, ns, full, conj, explain) => ({ type: 'steps', mn, hints, conj, explain,
+    rows: [{ l: 'HS', a: [].concat(hs) }, { l: 'NS', a: [].concat(ns) }, { l: conj === 'ob' ? 'ob-Satz' : 'dass-Satz', a: [].concat(full) }] });
   const Wr = (task, prompt, answers, hints, explain) => ({ type: 'write', task, prompt, answers: [].concat(answers), hints: hints || [], explain });
   const Mc = (q, options, answer, explain) => ({ type: 'mc', q, options, answer, explain });
   const In = (q, answers, explain) => ({ type: 'input', q, answers: [].concat(answers), explain });
@@ -509,7 +524,13 @@
       Mc('Mein Sohn füttert ___ Katze.', ['seine', 'ihre'], 'seine', 'Эзэмшигч (mein Sohn) эр хүйс → seine.'),
       Mc('schneiden → Partizip II', ['geschnitten', 'geschneidet'], 'geschnitten', 'schneiden – schnitt – geschnitten (geschneidet буруу).')
     ]),
-    ue('ue9', 'Übung 9', 'Seite 29', 'Der dass-Satz — бичих дасгал.', [
+    ue('ue9', 'Übung 9', 'Seite 29', 'Der dass-Satz — хичээл дээрх аргаар: HS → NS → dass-Satz.', [
+      ST('Би хүүгээ шалгалтанд тэнцэнэ гэж найдаж байна.', ['hoffen', 'der Sohn', 'bestehen', 'die Prüfung'], 'Ich hoffe.', 'Mein Sohn besteht die Prüfung.', 'Ich hoffe, dass mein Sohn die Prüfung besteht.', 'dass'),
+      ST('Би хүүгээ шалгалтанд тэнцэж чадна гэж найдаж байна.', ['hoffen', 'können', 'bestehen'], 'Ich hoffe.', 'Mein Sohn kann die Prüfung bestehen.', 'Ich hoffe, dass mein Sohn die Prüfung bestehen kann.', 'dass', 'Модал үйл үг (kann) хамгийн төгсгөлд.'),
+      ST('Би хүүгээ шалгалтанд тэнцсэнд баяртай байна.', ['sich freuen', 'bestehen'], 'Ich freue mich.', 'Mein Sohn hat die Prüfung bestanden.', 'Ich freue mich, dass mein Sohn die Prüfung bestanden hat.', 'dass', 'Туслах үйл үг (hat) хамгийн төгсгөлд.'),
+      ST('Петер өөрийгөө өвчтэй гэж бодож байна.', ['glauben', 'krank'], 'Peter glaubt.', 'Er ist krank.', 'Peter glaubt, dass er krank ist.', 'dass', 'Монгол өгүүлбэрт «өөрийгөө» гэж байгаа ч Nebensatz-д subjekt (er)-ийг заавал бичнэ.'),
+      ST('Би чамд эмчид үзүүлэхийг зөвлөж байна.', ['empfehlen', 'der Arzt'], 'Ich empfehle dir.', 'Du gehst zum Arzt.', 'Ich empfehle dir, dass du zum Arzt gehst.', 'dass', 'Тэмдэглэлд «Ich gehst» гэж байсан — du gehst (чи явна) байх ёстой.'),
+      ST('Галт тэрэг цагтаа ирнэ гэж би таамаглаж байна.', ['vermuten', 'der Zug', 'pünktlich', 'ankommen'], 'Ich vermute.', 'Der Zug kommt pünktlich an.', 'Ich vermute, dass der Zug pünktlich ankommt.', 'dass', 'Салдаг үйл үг Nebensatz-д нийлнэ: ankommt.'),
       Wr('Ich finde, dass … гэж эхлүүл', 'Der Kurs ist sehr gut.', 'Ich finde, dass der Kurs sehr gut ist.'),
       Wr('Ich weiß, dass … гэж эхлүүл', 'Sie kommt heute nicht.', 'Ich weiß, dass sie heute nicht kommt.'),
       Wr('Es freut mich, dass … гэж эхлүүл', 'Er hat die Prüfung bestanden.', 'Es freut mich, dass er die Prüfung bestanden hat.'),
@@ -544,6 +565,8 @@
       Wr(TR, 'Түүнтэй (эр) уулзах сайхан байна.', ['Es ist schön, ihn zu treffen.', 'Es ist schön, ihn zu sehen.'], ['schön', 'treffen'])
     ]),
     ue('ue13', 'Übung 13', 'Seite 35', 'Der ob-Satz — шууд бус асуулт.', [
+      ST('Дарга өнөөдөр ирэх эсэхийг би мэдэхгүй байна.', ['wissen', 'der Chef', 'heute'], 'Ich weiß nicht.', 'Der Chef kommt heute.', 'Ich weiß nicht, ob der Chef heute kommt.', 'ob', 'ob = «эсэх». Тийм/үгүй асуулт → ob.'),
+      ST('Хүү маань шалгалтанд тэнцсэн эсэхийг би мэдэхгүй байна.', ['wissen', 'der Sohn', 'bestehen'], 'Ich weiß nicht.', 'Mein Sohn hat die Prüfung bestanden.', 'Ich weiß nicht, ob mein Sohn die Prüfung bestanden hat.', 'ob'),
       Wr('Ich frage mich, … гэж үргэлжлүүл', 'Kommt er heute?', 'Ich frage mich, ob er heute kommt.'),
       Wr('Wissen Sie, …? гэж үргэлжлүүл', 'Ist das Museum am Montag geöffnet?', 'Wissen Sie, ob das Museum am Montag geöffnet ist?'),
       Wr('Ich weiß nicht, … гэж үргэлжлүүл', 'Hat sie die E-Mail bekommen?', 'Ich weiß nicht, ob sie die E-Mail bekommen hat.'),
@@ -667,7 +690,28 @@
     ])
   );
   WORKBOOK.find(u => u.id === 'ue1').page = 'Seite 2';
+  WORKBOOK.find(u => u.id === 'ue9').src = 'хичээл + зохиосон';
+  WORKBOOK.find(u => u.id === 'ue13').src = 'хичээл + зохиосон';
   WORKBOOK.find(u => u.id === 'ue2').page = 'Seite 5';
+
+  /* Хичээлийн өдрийн тэмдэглэл (шинэ хичээл бүрт энд нэмнэ) */
+  const UNTERRICHT = [
+    {
+      date: '2026-10-24', title: 'dass · ob · Akkusativ-Verben',
+      points: [
+        'dass-Satz: HS → NS → «HS, dass Subj … Obj Verb». Монгол өгүүлбэрт subjekt байхгүй бол Nebensatz-д өөрсдөө нэмнэ.',
+        'ob-Satz: «эсэх» — Ich weiß nicht, ob der Chef heute kommt.',
+        'Akkusativ шаарддаг үйл үг: haben, brauchen, bitten, bestehen, besuchen, fragen, treffen, heiraten, anrufen, operieren, stören, kennenlernen, erreichen.',
+        'Ярианд haben, sein, модаль үйл үг → Präteritum (Ich war krank, Ich konnte nicht schlafen).'
+      ],
+      fixes: [
+        ['Ich gehst zum Arzt.', 'Du gehst zum Arzt.'],
+        ['Ich bin krank. (Perfekt мөр)', 'Ich bin krank gewesen.']
+      ],
+      lessons: ['dass', 'ob', 'akkverben', 'praeteritumsein'],
+      ues: ['ue9', 'ue13']
+    }
+  ];
 
   /* Курсийн дараалал — Inhaltsverzeichnis */
   const COURSE = [
@@ -690,6 +734,8 @@
 
   /* ---------- Дүрмийн хичээлүүд ---------- */
   const mc = (q, options, answer, explain) => ({ type: 'mc', q, options, answer, explain });
+  const Wx = (prompt, answers, hints, explain) => ({ type: 'write', task: 'Герман хэлээр бич', prompt, answers: [].concat(answers), hints: hints || [], explain });
+  const TG = (p, pr, pf, explain) => ({ type: 'tense3', mn: p, hints: [], p: [p], pr: [pr], pf: [pf], explain });
   const inp = (q, answers, explain, hint) => ({ type: 'input', q, answers: [].concat(answers), explain, hint });
   const tiles = (q, answer, explain) => ({ type: 'tiles', q, answer, explain });
 
@@ -706,6 +752,7 @@
         '<b>Präteritum-ийн төгсгөл:</b> -, -st, -, -en, -t, -en. ich ба er хэлбэр төгсгөлгүй, ижил. ß/s/z-ээр төгсвөл du-д зөвхөн <b>-t</b>: ich saß, <b>du saßt</b>, er saß, wir saßen, <b>ihr saßt</b>, sie saßen.',
         '<b>Genitiv:</b> die Brille <b>ihrer Oma</b> ✓ · <b>Omas</b> Brille ✓ · <s>ihrer Omas Brille</s> ✗. Нэрийн өмнөх -s Genitiv артикльгүй: Opas Hemd ✓, <s>meines Opas Hemd</s> ✗. Стандарт: das Hemd meines Opas.',
         '<b>Эзэмшлийн төлөөний үг</b> эзэмшигчийн хүйсийг дагана: er → <b>seine</b> Katze, sie → <b>ihre</b> Katze. Монгол «-аа» (өөрийн) → эзэмшигчийнхээ хүйсээр.',
+        '<b>Ярианы хэлэнд</b> өнгөрсөн цагийг Perfekt-ээр хэлдэг. Харин <b>haben, sein</b> болон <b>модаль үйл үг</b> гол үйл үг болж байвал Präteritum түлхүү хэрэглэгдэнэ: <i>Ich <b>war</b> krank.</i> (Ich bin krank gewesen гэхээс илүү), <i>Ich <b>hatte</b> einen Hund. Ich <b>konnte</b> nicht schlafen.</i>',
         '<b>Тоо, тийн ялгал:</b> die Feuerwehr = ганц тоо → <b>rettet</b>. Akkusativ олон тоо: alle <b>Bewohner</b> (-n зөвхөн Dativ олон тоонд: mit allen Bewohnern). Язгуур -t-ээр төгсвөл: er rett<b>e</b>t, rett<b>e</b>te.'
       ],
       table: {
@@ -765,6 +812,74 @@
         inp('sitzen → Partizip II', 'gesessen', 'sitzen – saß – gesessen.'),
         inp('legen → Präteritum', 'legte', 'Сул үйл үг: legen – legte – gelegt.'),
         tiles('Ich setze meinen Sohn auf den Stuhl.', 'Ich setze meinen Sohn auf den Stuhl.', 'Akk. объект + auf + Akk.')
+      ]
+    },
+    {
+      id: 'akkverben', chapter: '+', title: 'Verben mit Akkusativ', mn: 'Akkusativ шаарддаг үйл үг', source: 'Хичээл 24.10',
+      intro: { de: 'Ich frage dich — nicht dir!', mn: '«Чамаас асууна» — гэхдээ герман хэлэнд Akkusativ!' },
+      rules: [
+        'Эдгээр үйл үг <b>шууд Akkusativ объект</b> авна: <b>haben, brauchen, bitten, bestehen, besuchen, fragen, treffen, heiraten, anrufen, operieren, stören, kennenlernen, erreichen</b>.',
+        'Монгол хэлэнд «чам<b>тай</b> гэрлэх, чам <b>руу</b> утасдах, багш<b>аас</b> асуух, над<b>ад</b> саад болох, түүн<b>тэй</b> уулзах» гэж хэлдэг тул Dativ эсвэл угтвар үг хэрэглэх гээд алддаг. Герман хэлэнд угтваргүй, <b>Akkusativ</b>: <i>Ich heirate <b>dich</b>. Ich rufe <b>dich</b> an. Ich frage <b>den</b> Lehrer. Die Kinder stören <b>mich</b>.</i>',
+        '<b>kennenlernen</b> — салдаг: <i>Ich lerne ihn kennen. Ich lernte ihn kennen. Ich habe ihn kennengelernt.</i>',
+        '<b>erreichen</b>: 1. зорилгодоо хүрэх (das Ziel erreichen) · 2. унаанд амжиж суух (den Zug erreichen) · 3. хүнтэй холбогдох (Ich erreiche dich nicht).',
+        '<b>N-Deklination</b>-ыг мартаж болохгүй: Akk. <b>den Studenten</b>, Dat. <b>dem Studenten</b>, Gen. <b>des Studenten</b>. <i>Der Arzt operiert den Patienten.</i>'
+      ],
+      table: {
+        head: ['Монгол', 'Deutsch (Akkusativ)'],
+        rows: [
+          ['Би чамтай гэрлэмээр байна.', 'Ich möchte dich heiraten.'],
+          ['Би чам руу утасдана.', 'Ich rufe dich an.'],
+          ['Би түүнтэй танилцана.', 'Ich lerne ihn kennen.'],
+          ['Би багшаас асууна.', 'Ich frage den Lehrer.'],
+          ['Надад мөнгө хэрэгтэй.', 'Ich brauche Geld.'],
+          ['Бид галт тэргэнд амжиж суусан.', 'Wir haben den Zug erreicht.']
+        ]
+      },
+      items: [
+        mc('Ich frage ___ Lehrer.', ['den', 'dem'], 'den', 'fragen + Akkusativ («багшаас» гэж Dativ биш).'),
+        mc('Ich rufe ___ Chef an.', ['den', 'dem'], 'den', 'anrufen + Akkusativ.'),
+        mc('Ich besuche ___ Onkel.', ['meinen', 'meinem'], 'meinen'),
+        mc('Ich treffe ___ Freund im Café.', ['meinen', 'meinem', 'mit meinem'], 'meinen', 'treffen + Akkusativ (mit хэрэггүй).'),
+        mc('Der Arzt operiert ___.', ['den Patienten', 'den Patient', 'dem Patienten'], 'den Patienten', 'Akkusativ + N-Deklination.'),
+        mc('Störe ___ Vater nicht!', ['deinen', 'deinem'], 'deinen'),
+        mc('Er heiratet ___ Freundin.', ['seine', 'mit seiner', 'seiner'], 'seine', 'heiraten + Akkusativ («-тай гэрлэх» гэж mit хэрэглэхгүй).'),
+        mc('Wir erreichen ___ Zug noch.', ['den', 'dem'], 'den'),
+        Wx('Би чамтай гэрлэмээр байна.', 'Ich möchte dich heiraten.', ['möchten', 'heiraten']),
+        Wx('Би чам руу утасдана.', 'Ich rufe dich an.', ['anrufen']),
+        Wx('Би түүнтэй (эр) танилцана.', 'Ich lerne ihn kennen.', ['kennenlernen']),
+        Wx('Би түүнтэй (эр) танилцсан. (Perfekt)', 'Ich habe ihn kennengelernt.', ['kennenlernen']),
+        Wx('Надад мөнгө хэрэгтэй.', 'Ich brauche Geld.', ['brauchen', 'das Geld']),
+        Wx('Хүүхдүүд надад саад болж байна.', 'Die Kinder stören mich.', ['stören']),
+        Wx('Би B2 курст сууж байна.', ['Ich besuche einen B2-Kurs.', 'Ich besuche den B2-Kurs.'], ['besuchen']),
+        Wx('Бид галт тэргэнд амжиж суусан.', ['Wir haben den Zug erreicht.', 'Wir erreichten den Zug.'], ['erreichen', 'der Zug'])
+      ]
+    },
+    {
+      id: 'praeteritumsein', chapter: '1+', title: 'haben · sein · Modalverben im Präteritum', mn: 'Ярианд Präteritum-ийг хэзээ хэрэглэх вэ', source: 'Хичээл 24.10',
+      intro: { de: 'Ich war krank — nicht: Ich bin krank gewesen.', mn: 'haben, sein, модаль → ярианд ч Präteritum!' },
+      rules: [
+        'Ярианы хэлэнд өнгөрсөн цагийг ихэвчлэн <b>Perfekt</b>-ээр хэлдэг: <i>Ich habe gegessen.</i>',
+        'Харин <b>haben</b>, <b>sein</b> болон <b>модаль үйл үг</b> (können, müssen, wollen, dürfen, sollen, mögen) гол үйл үг байх үед <b>Präteritum</b> илүү түгээмэл: <i>Ich war zu Hause. Ich hatte keine Zeit. Ich konnte nicht schlafen.</i>',
+        'Perfekt хэлбэр нь зөв ч урт, хүнд сонсогдоно: <i>Ich bin krank gewesen. Ich habe nicht schlafen können.</i> Модаль + Infinitiv-ийн Perfekt-д Partizip биш <b>Infinitiv</b> (können) хэрэглэнэ.'
+      ],
+      table: {
+        head: ['Präsens', 'Präteritum (ярианд)', 'Perfekt'],
+        rows: [
+          ['Ich habe einen Hund.', 'Ich hatte einen Hund.', 'Ich habe einen Hund gehabt.'],
+          ['Ich bin zu Hause.', 'Ich war zu Hause.', 'Ich bin zu Hause gewesen.'],
+          ['Ich bin krank.', 'Ich war krank.', 'Ich bin krank gewesen.'],
+          ['Ich kann nicht schlafen.', 'Ich konnte nicht schlafen.', 'Ich habe nicht schlafen können.']
+        ]
+      },
+      items: [
+        TG('Ich habe einen Hund.', 'Ich hatte einen Hund.', 'Ich habe einen Hund gehabt.'),
+        TG('Ich bin zu Hause.', 'Ich war zu Hause.', 'Ich bin zu Hause gewesen.'),
+        TG('Ich bin krank.', 'Ich war krank.', 'Ich bin krank gewesen.', 'Тэмдэглэлд Perfekt мөрөнд «Ich bin krank» гэж үлдсэн байсан — Ich bin krank gewesen.'),
+        TG('Ich kann nicht schlafen.', 'Ich konnte nicht schlafen.', 'Ich habe nicht schlafen können.'),
+        TG('Wir haben keine Zeit.', 'Wir hatten keine Zeit.', 'Wir haben keine Zeit gehabt.'),
+        TG('Er muss arbeiten.', 'Er musste arbeiten.', 'Er hat arbeiten müssen.'),
+        mc('Найздаа ярихдаа аль нь илүү түгээмэл вэ?', ['Ich war gestern krank.', 'Ich bin gestern krank gewesen.'], 'Ich war gestern krank.', 'sein → ярианд ч Präteritum.'),
+        mc('Найздаа ярихдаа аль нь илүү түгээмэл вэ?', ['Ich habe gestern Pizza gegessen.', 'Ich aß gestern Pizza.'], 'Ich habe gestern Pizza gegessen.', 'Ердийн үйл үг → ярианд Perfekt.')
       ]
     },
     {
@@ -839,18 +954,32 @@
       id: 'dass', chapter: '2', title: 'Der dass-Satz', mn: '«…гэдгийг» — dass холбоос', source: 'Übung 9',
       intro: { de: 'Ich weiß, dass du fleißig bist!', mn: 'Чамайг хичээнгүй гэдгийг би мэднэ!' },
       rules: [
-        '<b>dass</b> нь «…гэдгийг, …гэж» гэсэн утгатай Nebensatz үүсгэнэ. Үндсэн өгүүлбэр ба dass-ын хооронд <b>таслал</b> тавина.',
+        '<b>dass</b> нь «…гэж, …гэдгийг» (таамаг, итгэл, мэдээлэл) гэсэн утгатай Nebensatz үүсгэнэ. Үндсэн өгүүлбэр ба dass-ын хооронд <b>таслал</b> тавина.',
+        '<b>Хичээл дээрх арга:</b> монгол өгүүлбэрийг эхлээд хоёр хуваана. <b>HS</b> (Hauptsatz — гол өгүүлбэр): Subj Verb Obj. <b>NS</b> (Nebensatz — туслах өгүүлбэр): Subj Verb Obj. Дараа нь: <b>HS, dass + Subj … Obj Verb</b>.',
+        'Монгол хэлэнд «гэж» гэсэн өгүүлбэр доторх өгүүлбэр ихэвчлэн subjekt-гүй байдаг. Герман хэлэнд NS-ийн <b>subjekt-ийг заавал бичнэ</b>: «Петер өөрийгөө өвчтэй гэж бодож байна» → Peter glaubt, dass <b>er</b> krank ist.',
         'Nebensatz-д хувиргагдсан <b>үйл үг төгсгөлд</b> очно: <i>Ich weiß, dass er krank <b>ist</b>.</i>',
         'Нийлмэл цаг: туслах үйл үг хамгийн сүүлд — <i>…, dass er gekommen <b>ist</b>.</i> Модал: <i>…, dass er kommen <b>kann</b>.</i>',
         'Салдаг үйл үг дахин нийлнэ: <i>…, dass der Zug pünktlich <b>ankommt</b>.</i>',
         'Түгээмэл: wissen, glauben, denken, hoffen, sagen, finden, sich freuen, Es ist wichtig, dass…'
       ],
+      table: {
+        head: ['HS', 'NS', 'dass-Satz'],
+        rows: [
+          ['Ich hoffe.', 'Mein Sohn besteht die Prüfung.', 'Ich hoffe, dass mein Sohn die Prüfung besteht.'],
+          ['Ich hoffe.', 'Mein Sohn kann die Prüfung bestehen.', 'Ich hoffe, dass mein Sohn die Prüfung bestehen kann.'],
+          ['Ich freue mich.', 'Mein Sohn hat die Prüfung bestanden.', 'Ich freue mich, dass mein Sohn die Prüfung bestanden hat.'],
+          ['Peter glaubt.', 'Er ist krank.', 'Peter glaubt, dass er krank ist.'],
+          ['Ich empfehle dir.', 'Du gehst zum Arzt.', 'Ich empfehle dir, dass du zum Arzt gehst.'],
+          ['Ich vermute.', 'Der Zug kommt pünktlich an.', 'Ich vermute, dass der Zug pünktlich ankommt.']
+        ]
+      },
       examples: [
         { de: 'Ich glaube, dass der Kurs morgen beginnt.', mn: 'Курс маргааш эхэлнэ гэж би бодож байна.' },
         { de: 'Es ist wichtig, dass du jeden Tag übst.', mn: 'Чи өдөр бүр дасгал хийх нь чухал.' },
         { de: 'Er sagt, dass er keine Zeit hat.', mn: 'Тэр завгүй байгаа гэж хэлж байна.' }
       ],
       items: [
+        ST('Би хүүгээ шалгалтанд тэнцэнэ гэж найдаж байна.', ['hoffen', 'bestehen'], 'Ich hoffe.', 'Mein Sohn besteht die Prüfung.', 'Ich hoffe, dass mein Sohn die Prüfung besteht.', 'dass'),
         tiles('Би түүнийг өнөөдөр өвчтэй байгааг мэдэж байна.', 'Ich weiß, dass er heute krank ist.'),
         inp('Er kommt morgen. → Ich hoffe, dass …', 'Ich hoffe, dass er morgen kommt.', 'Үйл үг (kommt) төгсгөлд.'),
         inp('Der Zug kommt pünktlich an. → Ich glaube, dass …', 'Ich glaube, dass der Zug pünktlich ankommt.', 'Салдаг үйл үг нийлнэ: ankommt.'),
@@ -1198,5 +1327,5 @@
     { de: 'Für B2: Lies jeden Tag einen kurzen Zeitungsartikel.', mn: 'B2-д: өдөр бүр нэг богино мэдээ унш.' }
   ];
 
-  window.DL_DATA = { PRAISE_BIG, SCOLD, COURSE, IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
+  window.DL_DATA = { UNTERRICHT, PRAISE_BIG, SCOLD, COURSE, IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
 })();
