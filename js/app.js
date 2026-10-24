@@ -608,6 +608,7 @@
     }
     function finish() {
       state = null;
+      const tilesRepeat = items.every(x => x.type === 'tiles') ? [] : tilesFromItems(items);
       const pct = Math.round(100 * score / total);
       const stars = pct >= 90 ? 3 : pct >= 75 ? 2 : pct >= 50 ? 1 : 0;
       let bonus = 10 + (pct >= 80 ? 20 : 0) + (pct === 100 ? 20 : 0);
@@ -623,11 +624,14 @@
         <div class="muted">${Math.round(score * 10) / 10} / ${total} зөв · +${bonus} XP урамшуулал</div>
         <div class="row-flex" style="justify-content:center">
           <button class="btn primary" data-again>${icon('refresh')} Дахин</button>
+          ${tilesRepeat.length ? `<button class="btn" data-tiles>${icon('puzzle')} Үг байрлуулж давтах (${tilesRepeat.length})</button>` : ''}
           ${wrongItems.length ? `<button class="btn" data-wrong>${icon('alert')} Алдсанаа давтах (${wrongItems.length})</button>` : ''}
           ${opts.next ? `<a class="btn gold" href="#${opts.next.href}">${esc(opts.next.label)} ${icon('arrow')}</a>` : ''}
           <button class="btn ghost" data-done>Буцах</button>
         </div></div>`;
       $('[data-again]', host).addEventListener('click', () => runSession(host, opts.reshuffle ? shuffle(items) : items, opts));
+      const tb = $('[data-tiles]', host);
+      if (tb) tb.addEventListener('click', () => runSession(host, shuffle(tilesRepeat), Object.assign({}, opts, { title: (opts.title || 'Дасгал') + ' · үг байрлуулах', onFinish: null, next: null })));
       const wb = $('[data-wrong]', host);
       if (wb) wb.addEventListener('click', () => runSession(host, wrongItems.slice(), Object.assign({}, opts, { title: 'Алдаа давтах' })));
       $('[data-done]', host).addEventListener('click', () => opts.onQuit ? opts.onQuit() : render());
@@ -736,9 +740,9 @@
       };
     },
     tiles(card, it) {
-      const words = it.answer.split(' ');
+      const words = it.answer.replace(/[.,!?;:„“"]/g, '').split(' ').filter(Boolean);
       let pool = words.concat(it.distract || []).map(w => ({ w, used: false }));
-      for (let n = 0; n < 5; n++) { pool = shuffle(pool); if (pool.map(p => p.w).join(' ') !== it.answer) break; }
+      for (let n = 0; n < 5; n++) { pool = shuffle(pool); if (pool.map(p => p.w).join(' ') !== words.join(' ')) break; }
       let line = []; let done = false;
       card.insertAdjacentHTML('afterbegin', `<div class="label">${esc(it.label || 'Үгсийг зөв дараалалд оруул')}</div>
         <div class="q q-mn">${esc(it.q)}</div>
@@ -1071,7 +1075,7 @@
       ${l.examples ? `<section class="examples">${l.examples.map(e => `<div class="example">${sayBtn(e.de)}<div><div class="de">${esc(e.de)}</div><div class="mn">${esc(e.mn)}</div></div></div>`).join('')}</section>` : ''}
       <section id="lesson-practice" class="panel" style="display:grid;gap:14px">
         <div class="row-flex" style="justify-content:space-between"><div><div class="label">Дасгал · Übung</div><div class="h-sec" style="margin-top:6px">${l.items.length} даалгавар</div></div>
-        <button class="btn gold" id="start-lesson">${icon('arrow')} Дасгал эхлэх</button></div>
+        <div class="row-flex"><button class="btn gold" id="start-lesson">${icon('arrow')} Дасгал эхлэх</button>${tilesFromItems(l.items).length ? `<button class="btn" id="tiles-lesson">${icon('puzzle')} Үг байрлуулах (${tilesFromItems(l.items).length})</button>` : ''}</div></div>
         <p class="muted" style="margin:0">Сонголт, бичих, өгүүлбэр зохиох даалгаврууд холилдоно. 80%-иас дээш авбал сэдэв «давсан» болно.</p>
       </section>`;
     teacherSay(l.intro.de, l.intro.mn, 'wave', false);
@@ -1083,6 +1087,13 @@
         onFinish: pct => { const r = S.lessons[l.id] || { best: 0, times: 0 }; r.best = Math.max(r.best || 0, pct); r.times++; S.lessons[l.id] = r; save(); checkBadges(); },
         onQuit: () => render()
       });
+      host.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    });
+    const tl = $('#tiles-lesson', v);
+    if (tl) tl.addEventListener('click', () => {
+      const host = $('#lesson-practice', v);
+      host.className = '';
+      runSession(host, shuffle(tilesFromItems(l.items)), { title: l.title + ' · үг байрлуулах', topic: l.title, onQuit: () => render() });
       host.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     });
   };
@@ -1119,6 +1130,8 @@
       } else if (it.type === 'steps') {
         const a = it.rows[2].a[0];
         out.push({ type: 'tiles', q: it.mn, sub: it.rows[2].l, answer: a, distract: distractors(a) });
+      } else if (it.type === 'input' && /[а-яөүё]/i.test(it.q) && it.answers[0].split(' ').length > 2) {
+        out.push({ type: 'tiles', q: it.q, sub: it.label, answer: it.answers[0], distract: distractors(it.answers[0]) });
       } else if (it.type === 'tiles') out.push(it);
     });
     return out;
@@ -1730,12 +1743,14 @@
       host.innerHTML = `<div class="panel empty">${icon('check')}<div class="h-card">Алдаа алга!</div><div>Дасгал хийхэд гарсан алдаанууд энд цугларна.</div><a class="btn primary" href="#grammatik">Дүрэм рүү</a></div>`;
       return;
     }
-    host.innerHTML = `<div class="row-flex"><button class="btn gold" id="fstart">${icon('refresh')} Бүгдийг давтах (${Math.min(15, S.mistakes.length)})</button><button class="btn ghost" id="fclear">Цэвэрлэх</button></div>
+    host.innerHTML = `<div class="row-flex"><button class="btn gold" id="fstart">${icon('refresh')} Бүгдийг давтах (${Math.min(15, S.mistakes.length)})</button>${tilesFromItems(S.mistakes.map(m => m.item)).length ? `<button class="btn" id="ftiles">${icon('puzzle')} Үг байрлуулж давтах</button>` : ''}<button class="btn ghost" id="fclear">Цэвэрлэх</button></div>
       <section class="panel tight" style="margin-top:16px;padding:0">${S.mistakes.map(m => {
         const it = m.item;
         const ans = it.answer || (it.answers && it.answers[0]) || (it.pf && it.pf[0]) || (it.rows && it.rows[2].a[0]) || (it.v ? `${it.v.inf} – ${it.v.er} – ${it.v.prat} – ${it.v.perf}` : '');
         return `<div class="mistake"><span class="label">${esc(m.topic || '')}</span><div>${gapify(it.q || it.mn)}</div>${m.user ? `<div class="mu">${esc(m.user)}</div>` : ''}<div class="mc">${esc(ans)} ${/[a-zäöüß]/i.test(ans) ? sayBtn(ans) : ''}</div></div>`;
       }).join('')}</section>`;
+    const ft = $('#ftiles', v);
+    if (ft) ft.addEventListener('click', () => runSession(host, shuffle(tilesFromItems(S.mistakes.map(m => m.item))).slice(0, 12), { title: 'Fehlerheft · үг байрлуулах', topic: 'Fehlerheft', onQuit: () => render() }));
     $('#fstart', v).addEventListener('click', () => {
       runSession(host, S.mistakes.slice(0, 15).map(m => m.item), { title: 'Fehlerheft', topic: 'Fehlerheft', mode: 'mistakes', onQuit: () => render() });
     });
@@ -1831,7 +1846,7 @@
       ${u.fixes && u.fixes.length ? `<section class="panel"><div class="label" style="margin-bottom:12px">Тэмдэглэлийн засвар</div>
         <div style="display:grid;gap:10px">${u.fixes.map(([a, b]) => `<div class="row-flex" style="gap:10px"><span class="mu" style="color:var(--bad);text-decoration:line-through">${esc(a)}</span>${icon('arrow')}<b style="color:var(--ok)">${esc(b)}</b>${sayBtn(b)}</div>`).join('')}</div></section>` : ''}
       <section class="panel" style="display:grid;gap:12px"><div class="label">Энэ хичээлийг давтах</div>
-        <button class="btn gold" id="stunde-mix" style="justify-self:start">${icon('shuffle')} Холимог дасгал (12)</button>
+        <div class="row-flex"><button class="btn gold" id="stunde-mix">${icon('shuffle')} Холимог дасгал (12)</button><button class="btn" id="stunde-tiles">${icon('puzzle')} Монгол → герман үг байрлуулах</button></div>
         <div class="grid c2">
           ${lessons.map(l => `<a class="tile" href="#lesson-${l.id}"><span class="nr">Дүрэм</span><span class="h-card">${esc(l.title)}</span><span class="muted">${esc(l.mn)}</span></a>`).join('')}
           ${ues.map(x => `<a class="tile" href="#workbook-${x.id}"><span class="nr">Дасгал · ${esc(x.page)}</span><span class="h-card">${esc(x.title)}</span><span class="muted">${esc(x.mn)}</span></a>`).join('')}
@@ -1841,6 +1856,12 @@
       const pool = lessons.flatMap(l => l.items).concat(ues.flatMap(x => x.items.filter(it => it.type === 'steps')));
       const host = $('#stunde-host', v);
       runSession(host, sample(pool, Math.min(12, pool.length)), { title: u.title, topic: 'Unterricht ' + fmtDate(u.date), onQuit: () => render() });
+      host.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+    });
+    $('#stunde-tiles', v).addEventListener('click', () => {
+      const pool = tilesFromItems(ues.flatMap(x => x.items).concat(lessons.flatMap(l => l.items)));
+      const host = $('#stunde-host', v);
+      runSession(host, sample(pool, Math.min(12, pool.length)), { title: u.title + ' · үг байрлуулах', topic: 'Unterricht ' + fmtDate(u.date), onQuit: () => render() });
       host.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
     });
   };
