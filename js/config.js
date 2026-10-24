@@ -18,7 +18,14 @@ window.APP_CONFIG = {
      },
      Энэ түлхүүрүүд нийтэд харагдах зориулалттай — нууц биш. Хамгаалалт нь
      Firestore Rules-ээр хийгдэнэ. */
-  firebase: null,
+  firebase: {
+    apiKey: 'AIzaSyDAN4Hvuv_PWGJqwiiSZOP2ZZwjUmbQ79c',
+    authDomain: 'deutsch-lernen-a027b.firebaseapp.com',
+    projectId: 'deutsch-lernen-a027b',
+    storageBucket: 'deutsch-lernen-a027b.firebasestorage.app',
+    messagingSenderId: '322829551606',
+    appId: '1:322829551606:web:602cd2c3487fd9f609a9d7'
+  },
 
   teacher: {
     name: 'Frau Sonne',
