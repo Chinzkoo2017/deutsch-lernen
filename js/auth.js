@@ -40,7 +40,7 @@
         <button type="button" class="link-btn" id="a-toggle">${regMode ? 'Бүртгэлтэй юу? Нэвтрэх' : 'Шинээр бүртгүүлэх'}</button>
         ${!regMode && A.mode === 'cloud' ? '<button type="button" class="link-btn" id="a-forgot">Нууц үгээ мартсан уу?</button>' : ''}
       </div>
-      <p class="muted auth-note">${A.mode === 'cloud' ? 'Ахиц тань үүлэнд хадгалагдаж, аль ч төхөөрөмжөөс нээгдэнэ. Ангийнхан таны нэр, XP-г «Klasse» хэсэгт харна (имэйлийг харахгүй).' : 'Бүртгэл зөвхөн энэ төхөөрөмж, энэ браузер дээр хадгалагдана.'}</p>
+      <p class="muted auth-note">${A.mode === 'cloud' ? 'Willkommen! Нэг бүртгэлээр утас, компьютерийн алинаас нь ч нэвтэрч болно.' : 'Бүртгэл зөвхөн энэ төхөөрөмж, энэ браузер дээр хадгалагдана.'}</p>
     </div>`;
     box.querySelector('#a-toggle').onclick = () => { regMode = !regMode; drawForm(); };
     const fg = box.querySelector('#a-forgot'); if (fg) fg.onclick = forgot;
