@@ -630,3 +630,12 @@ body.kb-open .main { padding-bottom: 300px; }
 body.kb-open .teacher-col, body.kb-open .bottom-nav { display: none; }
 @media (min-width: 761px) { .kb { max-width: 760px; margin: 0 auto; border-radius: 16px 16px 0 0; border: 1px solid var(--line-strong); } }
 body.kb-open .umlauts { display: none; }
+
+/* Номын Lösung ба дасгалын үгс */
+.lsg{display:grid;gap:4px;margin-top:10px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--gold,#f5c542) 45%,transparent);border-radius:12px;background:color-mix(in srgb,var(--gold,#f5c542) 8%,transparent);font-size:14px}
+.lsg svg{width:15px;height:15px;vertical-align:-2px}
+.lsg-l{font-size:12px;letter-spacing:.04em;text-transform:uppercase;opacity:.8}
+.lsg-s{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:500}
+.wv [data-h]{cursor:pointer;transition:filter .2s,opacity .2s}
+.vt-hide-mn .wv [data-h="mn"]:not(.peek),.vt-hide-de .wv [data-h="de"]:not(.peek){filter:blur(7px);opacity:.55}
+.wb-words{display:flex;flex-wrap:wrap;gap:8px}

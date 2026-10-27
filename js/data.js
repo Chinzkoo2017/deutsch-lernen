@@ -784,6 +784,110 @@
   ['ue10', 'ue11', 'ue12', 'ue13'].forEach(id => { WORKBOOK.find(u => u.id === id).made = false; });
   WORKBOOK.find(u => u.id === 'ue2').page = 'Seite 5';
 
+  /* ---------- Номын Lösung (Seite 34–36) ----------
+     Дасгалын дугаар → номын хариулт. Энд бичсэн өгүүлбэр тухайн мөрийн
+     ЭХНИЙ (жишиг) хариулт болж, хуучин хувилбарууд нь «бас зөв» хэвээр үлдэнэ.
+     steps (Ü9, Ü13): [HS, NS, бүтэн өгүүлбэр] · Ü10: [dass-Satz, Inf-zu-Satz] · Ü11/12: өгүүлбэр.
+     h: тухайн дасгалд нэмэх үг (de|mn). Номд Lösung байхгүй (Ü9 1–3) бол bookFrom-оор алгасна. */
+  const LOESUNG = {
+    ue9: {
+      bookFrom: 4,
+      5: { r: ['Ich sehe.', 'Unser Professor sitzt auf der Parkbank.', 'Ich sehe, dass unser Professor auf der Parkbank sitzt.'], h: ['die Parkbank|цэцэрлэгт хүрээлэнгийн сандал'] },
+      6: { r: ['Er hat gar nicht erwähnt.', null, 'Er hat gar nicht erwähnt, dass seine Frau eine bekannte Pianistin ist.'], h: ['gar nicht|огт … үгүй'] },
+      7: { r: ['Die Krankenversicherung hat mir mitgeteilt.', null, 'Die Krankenversicherung hat mir mitgeteilt, dass sie die Kosten der Operation übernimmt.'] },
+      10: { r: [null, 'Unser Sohn hat gestern den Unterricht versäumt.', 'Frau Schneider hat mir mitgeteilt, dass unser Sohn gestern den Unterricht versäumt hat.', 'Frau Schneider hat mir mitgeteilt, dass mein Sohn gestern den Unterricht versäumt hat.'], h: ['versäumen|тасалах, алгасах'] },
+      12: { r: [null, 'Seine Firma ist pleite gegangen.', 'Ich habe gehört, dass seine Firma pleite gegangen ist.'] },
+      17: { r: [null, 'Ich lege einen Finanznachweis vor.', 'Die deutsche Botschaft verlangt von mir, dass ich einen Finanznachweis vorlege.'], h: ['der Finanznachweis|санхүүгийн баталгаа'] },
+      18: { r: [null, 'Du hast den Plastikmüll auf den Boden geworfen.', 'Ich habe gesehen, dass du den Plastikmüll auf den Boden geworfen hast.'] },
+      19: { r: [null, 'Ich schaffe ihm einen Hund an.', 'Mein Sohn überredet mich, dass ich ihm einen Hund anschaffe.'], h: ['anschaffen|олж авах'] },
+      22: { r: [null, 'Der Dieb flieht durch das Fenster des Kellers.', 'Ich sehe, dass der Dieb durch das Fenster des Kellers flieht.'], h: ['der Keller|подвал, зоорь'] },
+      23: { r: [null, 'Die Versammlung findet morgen statt.', 'Die Sekretärin hat mir gesagt, dass die Versammlung morgen stattfindet.'], h: ['die Versammlung|хурал'] },
+      24: { r: [null, 'Ich habe deinen Freund kennen gelernt.', 'Ich freue mich, dass ich deinen Freund kennen gelernt habe.'] },
+      25: { r: [null, 'Er schaut sich heute einen Film mit uns an.', 'Unser Vater hat uns versprochen, dass er sich heute einen Film mit uns anschaut.'], h: ['sich anschauen|үзэх'] },
+      27: { r: [null, ['Die Versammlung fällt aus.', 'Die Versammlung findet nicht statt.'], ['Frau Schneider hat mir mitgeteilt, dass die Versammlung ausfällt.', 'Frau Schneider hat mir mitgeteilt, dass die Versammlung nicht stattfindet.']], h: ['ausfallen|цуцлагдах, болохгүй болох'] },
+      29: { r: [null, 'Ich fasse die Bücher ohne seine Erlaubnis an.', 'Mein Vater hat mir verboten, dass ich die Bücher ohne seine Erlaubnis anfasse.'] },
+      32: { r: [null, 'Seine Frau ist aus Spanien zurückgekehrt.', 'Er hat nicht erwähnt, dass seine Frau aus Spanien zurückgekehrt ist.'], h: ['zurückkehren|буцаж ирэх'] },
+      34: { r: [null, 'Ihr Vater hat vor Kurzem seine Stelle verloren.', 'Susanna hat mir gesagt, dass ihr Vater vor Kurzem seine Stelle verloren hat.'] },
+      35: { r: ['Ich habe nicht gewusst.', null, 'Ich habe nicht gewusst, dass unser Professor in Rente gegangen ist.'] }
+    },
+    ue10: {
+      1: { r: ['Ich rate dir, dass du dich wärmer anziehst.', 'Ich rate dir, dich wärmer anzuziehen.'], h: ['raten|зөвлөх'] },
+      4: { r: ['Der Ingenieur versucht, dass er einen neuen Plan entwirft.', 'Der Ingenieur versucht, einen neuen Plan zu entwerfen.'], h: ['entwerfen|боловсруулах, зохиох'] },
+      9: { r: ['Ich habe mich entschlossen, dass ich mich von meinem Freund trenne.', 'Ich habe mich entschlossen, mich von meinem Freund zu trennen.'], h: ['sich entschließen|шийдэх'] },
+      10: { r: ['Ich freue mich, dass ich mein Handy wieder gefunden habe.', 'Ich freue mich, mein Handy wieder gefunden zu haben.'] },
+      12: { r: ['Susanna hat sich vorgenommen, dass sie Englisch lernt.', 'Susanna hat sich vorgenommen, Englisch zu lernen.'], h: ['sich vornehmen|төлөвлөх, зорих'] },
+      13: { r: ['Der Chef hat mir versprochen, dass er die Fortbildungskosten übernimmt.', 'Der Chef hat mir versprochen, die Fortbildungskosten zu übernehmen.'], h: ['die Fortbildungskosten|сургалтын зардал'] },
+      14: { r: ['Ich freue mich sehr, dass ich eine Einladung von Ihnen erhalten habe.', 'Ich freue mich sehr, eine Einladung von Ihnen erhalten zu haben.'], h: ['erhalten|хүлээж авах'] },
+      16: { r: ['Ich habe mich entschlossen, dass ich das Geschäft meines Vaters weiterführe.', 'Ich habe mich entschlossen, das Geschäft meines Vaters weiterzuführen.'], h: ['sich entschließen|шийдэх'] },
+      17: { r: ['Ich freue mich, dass ich eine Stelle bei Siemens bekommen habe.', 'Ich freue mich, eine Stelle bei Siemens bekommen zu haben.'] },
+      18: { r: ['Ich habe mich entschlossen, dass ich Ihren Vorschlag annehme.', 'Ich habe mich entschlossen, Ihren Vorschlag anzunehmen.'], h: ['der Vorschlag|санал', 'sich entschließen|шийдэх'] },
+      20: { r: ['Der Hausbesitzer hat den Mieter aufgefordert, dass er sofort die Miete zahlt.', 'Der Hausbesitzer hat den Mieter aufgefordert, sofort die Miete zu zahlen.'], h: ['der Hausbesitzer|байрны эзэн', 'auffordern|шаардах'] }
+    },
+    ue11: {
+      1: { r: 'Ich bereue, nicht viel gelernt zu haben.' },
+      4: { r: 'Ich bereue, dich angelogen zu haben.', h: ['anlügen|худал хэлэх, хуурах'] },
+      7: { r: ['Ich habe aufgehört, zu studieren.', 'Ich habe aufgehört zu studieren.'] },
+      13: { r: 'Ich habe mich entschlossen, einen Deutschkurs zu besuchen.', h: ['sich entschließen|шийдэх'] },
+      17: { r: 'Die Hirten versuchen mühsam, ihre Tradition zu bewahren.', h: ['mühsam|хичээнгүйлэн, хүчин чармайлтаар', 'bewahren|хадгалах'] },
+      18: { r: 'Meine Frau hat mich überredet, mir ein Auto zu kaufen.' },
+      21: { r: 'Sie hat begonnen, die Schule zu schwänzen.', h: ['beginnen|эхлэх'] },
+      22: { r: 'Ich habe mich entschlossen, nach dem Abitur eine Reise um die Welt zu machen.', h: ['das Abitur|төгсөлтийн шалгалт'] },
+      25: { r: 'Ich habe versucht, mit dem Professor einen Termin zu vereinbaren.' }
+    },
+    ue12: {
+      4: { r: 'Susanna hat Angst, mit dem Flugzeug zu fliegen.' }
+    },
+    ue13: {
+      bookTo: 22,
+      6: { r: [null, 'Ich kann morgen Überstunden leisten.', 'Der Chef hat mich gefragt, ob ich morgen Überstunden leisten kann.'], h: ['Überstunden leisten|илүү цагаар ажиллах'] },
+      10: { r: [null, 'Das Essen war lecker.', 'Der Kellner hat mich gefragt, ob das Essen lecker war.'] },
+      12: { r: ['Sie müssen uns rechtzeitig Bescheid geben.', 'Sie wollen die Einladung annehmen.', 'Sie müssen uns rechtzeitig Bescheid geben, ob Sie die Einladung annehmen wollen.'], h: ['Bescheid geben|мэдэгдэх'] },
+      13: { r: ['Ich frage den Schalterbeamten.', null, 'Ich frage den Schalterbeamten, ob der Zug pünktlich abfährt.'], h: ['der Schalterbeamte|кассын (мэдээллийн) ажилтан'] },
+      14: { r: [null, 'Du bist verheiratet.', 'Peter hat mich heute gefragt, ob du verheiratet bist.'] },
+      17: { r: ['Ich möchte erfahren.', null, 'Ich möchte erfahren, ob er mich liebt.'], h: ['erfahren|мэдэх, олж мэдэх'] },
+      18: { r: ['Ich will wissen.', null, 'Ich will wissen, ob die Firma Waren nach Italien liefert.'] },
+      19: { r: [null, 'Du kannst sonntags arbeiten.', 'Ich erkundige mich, ob du sonntags arbeiten kannst.'], h: ['sonntags|бүтэн сайн өдөр бүр'] },
+      20: { r: [null, 'Du kannst dieses Buch eine Weile behalten.', 'Ich erkundige mich, ob du dieses Buch eine Weile behalten kannst.'], h: ['behalten|өөртөө байлгах', 'eine Weile|хэсэг хугацаа'] },
+      22: { r: ['Ich erkundige mich gleich.', null, 'Ich erkundige mich gleich, ob Miguel nach Spanien zurückgekehrt ist.'], h: ['gleich|одоохон'] }
+    }
+  };
+  Object.keys(LOESUNG).forEach(id => {
+    const u = WORKBOOK.find(x => x.id === id), L = LOESUNG[id];
+    const from = L.bookFrom || 1, to = L.bookTo || u.items.length;
+    const front = (arr, v) => { [].concat(v).reverse().forEach(s => { const k = arr.indexOf(s); if (k >= 0) arr.splice(k, 1); arr.unshift(s); }); };
+    u.items.forEach((it, i) => {
+      const nr = i + 1, fix = L[nr];
+      if (nr < from || nr > to) return;
+      if (fix) {
+        if (it.rows) fix.r.forEach((v, k) => { if (v && it.rows[k]) front(it.rows[k].a, v); });
+        else if (it.answers) front(it.answers, fix.r);
+        if (fix.h) fix.h.forEach(h => { if (!it.hints.some(x => x.split('|')[0] === h.split('|')[0])) it.hints.push(h); });
+      }
+      it.nr = nr;
+      it.book = it.rows ? (it.conj === 'zu' ? it.rows.map(r => r.a[0]) : [it.rows[it.rows.length - 1].a[0]]) : [it.answers[0]];
+    });
+    u.lsg = 'Lösung · Seite 34–36';
+  });
+
+  /* ---------- Дасгал бүрийн үгсийн сан ----------
+     Дасгалын өгүүлбэрүүдийн тусламж үгсээс (de|mn) автоматаар цуглуулна.
+     Номын үгсийн жагсаалтыг гараар нэмэх бол WORDS_EXTRA[id]-д "de|mn" хэлбэрээр бичнэ. */
+  const WORDS_EXTRA = {};
+  const WORDLISTS = {};
+  WORKBOOK.forEach(u => {
+    const seen = new Set(), list = [];
+    const add = (h, src) => {
+      if (!h || !h.includes('|')) return;
+      const [de, mn] = h.split('|').map(s => s.trim());
+      const key = de.toLowerCase();
+      if (!de || seen.has(key)) return;
+      seen.add(key); list.push({ de, mn, src });
+    };
+    (WORDS_EXTRA[u.id] || []).forEach(h => add(h, 'book'));
+    u.items.forEach((it, i) => (it.hints || []).forEach(h => add(h, i + 1)));
+    if (list.length >= 4) WORDLISTS[u.id] = list;
+  });
+
   /* Хичээлийн өдрийн тэмдэглэл (шинэ хичээл бүрт энд нэмнэ) */
   const UNTERRICHT = [
     {
@@ -1417,5 +1521,5 @@
     { de: 'Für B2: Lies jeden Tag einen kurzen Zeitungsartikel.', mn: 'B2-д: өдөр бүр нэг богино мэдээ унш.' }
   ];
 
-  window.DL_DATA = { UNTERRICHT, PRAISE_BIG, SCOLD, COURSE, IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
+  window.DL_DATA = { WORDLISTS, UNTERRICHT, PRAISE_BIG, SCOLD, COURSE, IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
 })();

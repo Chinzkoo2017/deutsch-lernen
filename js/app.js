@@ -661,6 +661,12 @@
   });
 
   /* Сануулгын чип: 'deutsch|монгол' эсвэл үгсийн сангаас хайна */
+  function bookHTML(it, typed) {
+    if (!it.book) return '';
+    const same = typed && it.book.length === 1 && norm(typed) === norm(it.book[0]);
+    if (same) return `<div class="lsg">${icon('book')} Номын Lösung-тэй яг ижил!</div>`;
+    return `<div class="lsg"><span class="lsg-l">${icon('book')} Lösung (ном${it.nr ? ' #' + it.nr : ''})</span>${it.book.map(b => `<span class="lsg-s">${esc(b)} ${sayBtn(b)}</span>`).join('')}</div>`;
+  }
   function hintChip(h) {
     let de = h, mn = '';
     if (h.includes('|')) [de, mn] = h.split('|');
@@ -865,6 +871,7 @@
             ok: r.ok, typo: r.typo, user: f.value, sayAnswer: r.expected, allowOverride: true,
             feedbackHTML: (r.ok && !r.typo ? '' : `<div class="ans diff">${r.ok ? 'Зөв бичлэг: ' : 'Жишиг хариулт: '}${diffHTML(r.expected, f.value)} ${sayBtn(r.expected)}</div>`)
               + (!r.ok && others.length ? `<div class="ex">Өөр зөв хувилбар: ${others.slice(0, 2).map(esc).join(' · ')}</div>` : '')
+              + bookHTML(it, f.value)
           };
         }
       };
@@ -896,7 +903,7 @@
             if (res.ok) good++; else wrongParts.push({ type: 'input', label: r.l, q: `${it.mn} → ${r.l}`, answers: r.a });
             $(`[data-fb="${k}"]`, card).innerHTML = res.ok && !res.typo ? '' : `<span class="diff">${res.ok ? 'Бичлэг: ' : ''}${diffHTML(res.expected, f.value)}</span> ${sayBtn(res.expected)}`;
           });
-          return { allowOverride: true, ok: good === rows.length, frac: good / rows.length, parts: [good, rows.length], wrongParts: good === rows.length ? null : wrongParts, sayAnswer: rows[rows.length - 1].a[0], feedbackHTML: '' };
+          return { allowOverride: true, ok: good === rows.length, frac: good / rows.length, parts: [good, rows.length], wrongParts: good === rows.length ? null : wrongParts, sayAnswer: rows[rows.length - 1].a[0], feedbackHTML: bookHTML(it, fields[fields.length - 1].value) };
         }
       };
     },
@@ -1183,18 +1190,20 @@
           const u = WB(id), r = S.workbook[id] || {};
           return `<a class="ue-row ${r.best >= 80 ? 'done' : ''} ${nx.u.id === id ? 'next' : ''}" href="#workbook-${id}">
             <span class="ue-t"><b>${esc(u.title)}</b> <span class="muted mono" style="font-size:12px">${esc(u.page)} · ${u.items.length}</span><span class="ue-mn">${esc(u.mn)}</span></span>
-            <span class="pill ${u.made ? '' : 'gold'}">${u.made ? (u.src || 'зохиосон') : 'номоос'}</span>
+            <span class="row-flex" style="gap:6px;flex-wrap:nowrap">${(D.WORDLISTS || {})[id] ? `<span class="pill" role="link" tabindex="0" data-words="${id}" title="Энэ дасгалын үгс">${icon('cards')} Үгс</span>` : ''}<span class="pill ${u.made ? '' : 'gold'}">${u.made ? (u.src || 'зохиосон') : 'номоос'}</span></span>
             <span class="progress ok"><i style="width:${r.best || 0}%"></i></span>
             <span class="mono muted ue-pct">${r.best != null ? r.best + '%' : '—'}</span></a>`;
         }).join('')}</div>
       </section>`).join('')}`;
+    $$('[data-words]', v).forEach(p => p.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); location.hash = 'workbook-' + p.dataset.words + '~words'; }));
   };
   VIEWS.workbook = function (v, arg) {
     const [id, n] = String(arg || '').split('~');
     const u = WB(id);
     if (!u) return VIEWS.uebungen(v);
     const chap = D.COURSE.find(c => c.ues.includes(id));
-    const tilesMode = n === 'tiles';
+    const tilesMode = n === 'tiles', wordsMode = n === 'words';
+    const WL = (D.WORDLISTS || {})[id];
     let items = n && !tilesMode ? sample(u.items, Number(n)) : u.items.slice();
     if (tilesMode) items = tilesFromItems(items);
     const nxt = afterUebung(id);
@@ -1202,7 +1211,9 @@
       <div class="lesson-head">
         <div class="row-flex"><span class="pill ${u.made ? '' : 'gold'}">${u.made ? (u.src || 'зохиосон дасгал') : 'номын дасгал'}</span>${chap ? `<a class="pill" href="#lesson-${chap.lesson}" style="text-decoration:none">${icon('book')} ${esc(chap.title)}</a>` : ''}</div>
         <h1 class="h-hero">${esc(u.title)}</h1><p class="sub-mn" style="margin:0">${esc(u.mn)}</p>
-        <div class="seg" style="justify-self:start"><a class="${tilesMode || n ? '' : 'on'}" href="#workbook-${id}">${icon('pencil')} Бичих</a><a class="${tilesMode ? 'on' : ''}" href="#workbook-${id}~tiles">${icon('puzzle')} Үг байрлуулах</a>${u.items.length > 12 ? `<a class="${n === '10' ? 'on' : ''}" href="#workbook-${id}~10">${icon('shuffle')} 10 санамсаргүй</a>` : ''}</div></div><div id="wb-host"></div>`;
+        <div class="seg" style="justify-self:start"><a class="${tilesMode || n ? '' : 'on'}" href="#workbook-${id}">${icon('pencil')} Бичих</a><a class="${tilesMode ? 'on' : ''}" href="#workbook-${id}~tiles">${icon('puzzle')} Үг байрлуулах</a>${WL ? `<a class="${wordsMode ? 'on' : ''}" href="#workbook-${id}~words">${icon('cards')} Үгс (${WL.length})</a>` : ''}${u.items.length > 12 ? `<a class="${n === '10' ? 'on' : ''}" href="#workbook-${id}~10">${icon('shuffle')} 10 санамсаргүй</a>` : ''}</div></div><div id="wb-host"></div>`;
+    if (u.lsg) $('.lesson-head .row-flex', v).insertAdjacentHTML('beforeend', `<span class="pill gold">${icon('book')} ${esc(u.lsg)}</span>`);
+    if (wordsMode && WL) return wordsView($('#wb-host', v), u, WL);
     if (tilesMode && !items.length) { $('#wb-host', v).innerHTML = `<div class="panel empty">Энэ дасгалд үг байрлуулах хувилбар алга. Бичих горимоор хийгээрэй.</div>`; return; }
     teacherSay('Schreiben, schreiben, schreiben! Los geht es!', 'Бич, бич, бич! Эхэлцгээе!', 'wave', false);
     runSession($('#wb-host', v), items, {
@@ -1212,6 +1223,31 @@
       onQuit: () => go('uebungen')
     });
   };
+
+  /* Дасгалын үгсийн жагсаалт: харах, сонсох, нууж цээжлэх, шалгах */
+  function wordsView(host, u, WL) {
+    let hide = '';
+    const draw = () => {
+      host.innerHTML = `<section class="panel tight" style="display:grid;gap:14px">
+        <div class="row-flex" style="justify-content:space-between">
+          <div class="seg" id="wv-mode">${[['', 'Бүгд'], ['mn', 'Монголыг нуух'], ['de', 'Германыг нуух']].map(([k, t]) => `<button data-m="${k}" class="${hide === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+          <div class="row-flex" style="gap:8px"><button class="btn small" id="wv-say">${icon('speaker')} Бүгдийг сонсох</button><button class="btn small primary" id="wv-test">${icon('target')} Үгээ шалгах</button></div>
+        </div>
+        <p class="muted" style="margin:0;font-size:13px">${esc(u.title)} дасгалын өгүүлбэрүүдэд хэрэглэгдэх ${WL.length} үг. Нуусан үг дээр дарвал харагдана. # — аль өгүүлбэрт гарахыг заана.</p>
+        <div class="wlist ${hide ? 'vt-hide-' + hide : ''}">${WL.map(w => `<div class="witem wv"><div><div class="wde" data-h="de">${esc(w.de)}</div><div class="wsub">${typeof w.src === 'number' ? '#' + w.src : 'ном'}</div></div><div class="wmn" data-h="mn">${esc(w.mn)}</div><div class="row-flex" style="gap:8px">${sayBtn(w.de)}</div></div>`).join('')}</div>
+      </section>`;
+      $$('#wv-mode button', host).forEach(b => b.addEventListener('click', () => { hide = b.dataset.m; draw(); }));
+      $$('.wv [data-h]', host).forEach(el => el.addEventListener('click', () => el.classList.toggle('peek')));
+      $('#wv-say', host).addEventListener('click', () => { let k = 0; const nx = () => { if (k < WL.length && location.hash.endsWith('~words')) { speak(WL[k++].de); setTimeout(nx, 1800); } }; nx(); });
+      $('#wv-test', host).addEventListener('click', () => {
+        const pool = sample(WL, Math.min(12, WL.length));
+        const items = pool.map((w, k) => k % 2 ? ({ type: 'input', label: 'Герман үгийг бич', q: w.mn, answers: [w.de], explain: u.title + (typeof w.src === 'number' ? ' · #' + w.src : '') })
+          : ({ type: 'mc', label: 'Монгол утгыг сонго', q: w.de, options: shuffle([w.mn].concat(sample(WL.filter(x => x !== w), 3).map(x => x.mn))), answer: w.mn }));
+        runSession(host, items, { title: u.title + ' · Үгс', topic: u.title + ' үгс', onQuit: draw, next: { href: 'workbook-' + u.id, label: 'Дасгал руу' } });
+      });
+    };
+    draw();
+  }
 
   /* ---------- Үгсийн сан ---------- */
   let vocabFilter = 'all', vocabQuery = '';
@@ -1232,6 +1268,7 @@
         <a class="tile" href="#tippen"><span class="tile-ico">${icon('keyboard')}</span><span class="h-card">Tippen</span><span class="muted">Артикльтай нь бич</span></a>
         <a class="tile" href="#hoeren"><span class="tile-ico">${icon('speaker')}</span><span class="h-card">Hören</span><span class="muted">Сонсоод таа</span></a>
       </div>
+      ${Object.keys(D.WORDLISTS || {}).length ? `<section class="panel tight" style="display:grid;gap:10px"><div class="label">Дасгал бүрийн үгс</div><div class="wb-words">${Object.keys(D.WORDLISTS).map(id => `<a class="btn small" href="#workbook-${id}~words">${icon('cards')} ${esc(WB(id).title)} · ${D.WORDLISTS[id].length}</a>`).join('')}</div></section>` : ''}
       <section class="panel tight" style="display:grid;gap:14px">
         <div class="search"><input class="field" id="vq" placeholder="Хайх: Wecker, сэрүүлэг…" value="${esc(vocabQuery)}">
           <div class="seg" id="vf">${[['all', 'Бүгд'], ['noun', 'Nomen'], ['verb', 'Verben'], ['ndekl', 'N-Dekl.'], ['ue1', 'Übung 1'], ['ue2', 'Übung 2']].map(([k, t]) => `<button data-f="${k}" class="${vocabFilter === k ? 'on' : ''}">${t}</button>`).join('')}</div></div>
