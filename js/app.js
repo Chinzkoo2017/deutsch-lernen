@@ -660,6 +660,14 @@
     if (g) { e.preventDefault(); go(g.dataset.go); }
   });
 
+  /* Сануулгын чип: 'deutsch|монгол' эсвэл үгсийн сангаас хайна */
+  function hintChip(h) {
+    let de = h, mn = '';
+    if (h.includes('|')) [de, mn] = h.split('|');
+    else { const w = W.find(x => wordLabel(x) === h || x.de === h); mn = w ? w.mn : ''; }
+    const label = mn || de;
+    return `<button type="button" class="hint-chip" data-hw="${esc(de)}" data-mn="${esc(label)}">${esc(label)}</button>`;
+  }
   const RENDER = {
     mc(card, it) {
       const opts = shuffle(it.options);
@@ -830,7 +838,7 @@
       const isMn = /[а-яөүё]/i.test(it.prompt);
       card.insertAdjacentHTML('afterbegin', `<div class="label">${esc(it.task)}</div>
         <div class="q ${isMn ? 'q-mn' : ''}">${esc(it.prompt)}</div>
-        ${it.hints.length ? `<div class="hints">${it.hints.map(h => { const w = W.find(x => wordLabel(x) === h || x.de === h); return `<button type="button" class="hint-chip" data-hw="${esc(h)}" data-mn="${esc(w ? w.mn : h)}">${esc(w ? w.mn : h)}</button>`; }).join('')}</div>` : ''}
+        ${it.hints.length ? `<div class="hints">${it.hints.map(h => { return hintChip(h); }).join('')}</div>` : ''}
         <textarea class="field write-field" rows="2" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Герман өгүүлбэрээ бич…"></textarea>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
@@ -865,7 +873,7 @@
       const rows = it.rows;
       card.insertAdjacentHTML('afterbegin', `<div class="label">HS → NS → ${esc(rows[2].l)}</div>
         <div class="q q-mn">${esc(it.mn)}</div>
-        ${it.hints && it.hints.length ? `<div class="hints">${it.hints.map(h => { const w = W.find(x => wordLabel(x) === h || x.de === h); return `<button type="button" class="hint-chip" data-hw="${esc(h)}" data-mn="${esc(w ? w.mn : h)}">${esc(w ? w.mn : h)}</button>`; }).join('')}</div>` : ''}
+        ${it.hints && it.hints.length ? `<div class="hints">${it.hints.map(h => { return hintChip(h); }).join('')}</div>` : ''}
         <div class="tense-rows">${rows.map((r, k) => `<div class="tense-row"><span class="tl">${esc(r.l)}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${k === 0 ? 'Гол өгүүлбэр…' : k === 1 ? 'Туслах өгүүлбэр…' : (it.conj === 'ob' ? '…, ob …' : '…, dass …')}"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
@@ -888,7 +896,7 @@
             if (res.ok) good++; else wrongParts.push({ type: 'input', label: r.l, q: `${it.mn} → ${r.l}`, answers: r.a });
             $(`[data-fb="${k}"]`, card).innerHTML = res.ok && !res.typo ? '' : `<span class="diff">${res.ok ? 'Бичлэг: ' : ''}${diffHTML(res.expected, f.value)}</span> ${sayBtn(res.expected)}`;
           });
-          return { ok: good === rows.length, frac: good / rows.length, parts: [good, rows.length], wrongParts: good === rows.length ? null : wrongParts, sayAnswer: rows[2].a[0], feedbackHTML: '' };
+          return { allowOverride: true, ok: good === rows.length, frac: good / rows.length, parts: [good, rows.length], wrongParts: good === rows.length ? null : wrongParts, sayAnswer: rows[2].a[0], feedbackHTML: '' };
         }
       };
     },
@@ -931,7 +939,7 @@
       const tenses = [['p', 'Präsens'], ['pr', 'Präteritum'], ['pf', 'Perfekt']];
       card.insertAdjacentHTML('afterbegin', `<div class="label">Гурван цагаар орчуул</div>
         <div class="q q-mn">${esc(it.mn)}</div>
-        <div class="hints">${it.hints.map(h => { const w = W.find(x => wordLabel(x) === h || x.de === h); return `<button type="button" class="hint-chip" data-hw="${esc(h)}" data-mn="${esc(w ? w.mn : '')}">${esc(w ? w.mn : h)}</button>`; }).join('')}</div>
+        <div class="hints">${it.hints.map(h => { return hintChip(h); }).join('')}</div>
         <div class="tense-rows">${tenses.map(([k, n]) => `<div class="tense-row"><span class="tl">${n}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${n}…"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
@@ -1193,7 +1201,7 @@
       <div class="lesson-head">
         <div class="row-flex"><span class="pill ${u.made ? '' : 'gold'}">${u.made ? (u.src || 'зохиосон дасгал') : 'номын дасгал'}</span>${chap ? `<a class="pill" href="#lesson-${chap.lesson}" style="text-decoration:none">${icon('book')} ${esc(chap.title)}</a>` : ''}</div>
         <h1 class="h-hero">${esc(u.title)}</h1><p class="sub-mn" style="margin:0">${esc(u.mn)}</p>
-        <div class="seg" style="justify-self:start"><a class="${tilesMode ? '' : 'on'}" href="#workbook-${id}">${icon('pencil')} Бичих</a><a class="${tilesMode ? 'on' : ''}" href="#workbook-${id}~tiles">${icon('puzzle')} Үг байрлуулах</a></div></div><div id="wb-host"></div>`;
+        <div class="seg" style="justify-self:start"><a class="${tilesMode || n ? '' : 'on'}" href="#workbook-${id}">${icon('pencil')} Бичих</a><a class="${tilesMode ? 'on' : ''}" href="#workbook-${id}~tiles">${icon('puzzle')} Үг байрлуулах</a>${u.items.length > 12 ? `<a class="${n === '10' ? 'on' : ''}" href="#workbook-${id}~10">${icon('shuffle')} 10 санамсаргүй</a>` : ''}</div></div><div id="wb-host"></div>`;
     if (tilesMode && !items.length) { $('#wb-host', v).innerHTML = `<div class="panel empty">Энэ дасгалд үг байрлуулах хувилбар алга. Бичих горимоор хийгээрэй.</div>`; return; }
     teacherSay('Schreiben, schreiben, schreiben! Los geht es!', 'Бич, бич, бич! Эхэлцгээе!', 'wave', false);
     runSession($('#wb-host', v), items, {
