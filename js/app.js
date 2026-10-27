@@ -871,10 +871,10 @@
     },
     steps(card, it) {
       const rows = it.rows;
-      card.insertAdjacentHTML('afterbegin', `<div class="label">HS → NS → ${esc(rows[2].l)}</div>
+      card.insertAdjacentHTML('afterbegin', `<div class="label">${rows.map(r => esc(r.l)).join(rows.length === 3 ? ' → ' : ' · ')}</div>
         <div class="q q-mn">${esc(it.mn)}</div>
         ${it.hints && it.hints.length ? `<div class="hints">${it.hints.map(h => { return hintChip(h); }).join('')}</div>` : ''}
-        <div class="tense-rows">${rows.map((r, k) => `<div class="tense-row"><span class="tl">${esc(r.l)}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${k === 0 ? 'Гол өгүүлбэр…' : k === 1 ? 'Туслах өгүүлбэр…' : (it.conj === 'ob' ? '…, ob …' : '…, dass …')}"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
+        <div class="tense-rows">${rows.map((r, k) => `<div class="tense-row"><span class="tl">${esc(r.l)}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${esc(r.ph || (k === 0 ? 'Гол өгүүлбэр…' : k === 1 ? 'Туслах өгүүлбэр…' : (it.conj === 'ob' ? '…, ob …' : '…, dass …')))}"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
         const show = !c.classList.contains('revealed');
@@ -883,7 +883,7 @@
       }));
       const fields = $$('input[data-t]', card);
       fields.forEach((f, k) => f.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && k < 2 && !f.readOnly) { e.preventDefault(); e.stopPropagation(); fields[k + 1].focus(); }
+        if (e.key === 'Enter' && k < fields.length - 1 && !f.readOnly) { e.preventDefault(); e.stopPropagation(); fields[k + 1].focus(); }
       }));
       return {
         hint() { $$('.hint-chip', card).forEach(c => { if (!c.classList.contains('revealed')) c.click(); }); fields[0].placeholder = rows[0].a[0].split(' ').slice(0, 2).join(' ') + ' …'; },
@@ -896,7 +896,7 @@
             if (res.ok) good++; else wrongParts.push({ type: 'input', label: r.l, q: `${it.mn} → ${r.l}`, answers: r.a });
             $(`[data-fb="${k}"]`, card).innerHTML = res.ok && !res.typo ? '' : `<span class="diff">${res.ok ? 'Бичлэг: ' : ''}${diffHTML(res.expected, f.value)}</span> ${sayBtn(res.expected)}`;
           });
-          return { allowOverride: true, ok: good === rows.length, frac: good / rows.length, parts: [good, rows.length], wrongParts: good === rows.length ? null : wrongParts, sayAnswer: rows[2].a[0], feedbackHTML: '' };
+          return { allowOverride: true, ok: good === rows.length, frac: good / rows.length, parts: [good, rows.length], wrongParts: good === rows.length ? null : wrongParts, sayAnswer: rows[rows.length - 1].a[0], feedbackHTML: '' };
         }
       };
     },
@@ -1136,8 +1136,9 @@
       } else if (it.type === 'write') {
         out.push({ type: 'tiles', q: it.prompt, sub: it.task, label: /[а-яөүё]/i.test(it.prompt) ? 'Герман өгүүлбэрийг үгсээс угсар' : 'Нийлүүлсэн өгүүлбэрийг угсар', answer: it.answers[0], distract: distractors(it.answers[0]) });
       } else if (it.type === 'steps') {
-        const a = it.rows[2].a[0];
-        out.push({ type: 'tiles', q: it.mn, sub: it.rows[2].l, answer: a, distract: distractors(a) });
+        const r = it.conj === 'zu' ? pick(it.rows) : it.rows[it.rows.length - 1];
+        const a = r.a[0];
+        out.push({ type: 'tiles', q: it.mn, sub: r.l, answer: a, distract: distractors(a) });
       } else if (it.type === 'input' && /[а-яөүё]/i.test(it.q) && it.answers[0].split(' ').length > 2) {
         out.push({ type: 'tiles', q: it.q, sub: it.label, answer: it.answers[0], distract: distractors(it.answers[0]) });
       } else if (it.type === 'tiles') out.push(it);
@@ -1754,7 +1755,7 @@
     host.innerHTML = `<div class="row-flex"><button class="btn gold" id="fstart">${icon('refresh')} Бүгдийг давтах (${Math.min(15, S.mistakes.length)})</button>${tilesFromItems(S.mistakes.map(m => m.item)).length ? `<button class="btn" id="ftiles">${icon('puzzle')} Үг байрлуулж давтах</button>` : ''}<button class="btn ghost" id="fclear">Цэвэрлэх</button></div>
       <section class="panel tight" style="margin-top:16px;padding:0">${S.mistakes.map(m => {
         const it = m.item;
-        const ans = it.answer || (it.answers && it.answers[0]) || (it.pf && it.pf[0]) || (it.rows && it.rows[2].a[0]) || (it.v ? `${it.v.inf} – ${it.v.er} – ${it.v.prat} – ${it.v.perf}` : '');
+        const ans = it.answer || (it.answers && it.answers[0]) || (it.pf && it.pf[0]) || (it.rows && it.rows[it.rows.length - 1].a[0]) || (it.v ? `${it.v.inf} – ${it.v.er} – ${it.v.prat} – ${it.v.perf}` : '');
         return `<div class="mistake"><span class="label">${esc(m.topic || '')}</span><div>${gapify(it.q || it.mn)}</div>${m.user ? `<div class="mu">${esc(m.user)}</div>` : ''}<div class="mc">${esc(ans)} ${/[a-zäöüß]/i.test(ans) ? sayBtn(ans) : ''}</div></div>`;
       }).join('')}</section>`;
     const ft = $('#ftiles', v);
