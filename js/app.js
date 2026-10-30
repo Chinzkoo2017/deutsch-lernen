@@ -667,6 +667,31 @@
     if (same) return `<div class="lsg">${icon('book')} Номын Lösung-тэй яг ижил!</div>`;
     return `<div class="lsg"><span class="lsg-l">${icon('book')} Lösung (ном${it.nr ? ' #' + it.nr : ''})</span>${it.book.map(b => `<span class="lsg-s">${esc(b)} ${sayBtn(b)}</span>`).join('')}</div>`;
   }
+  /* Өгүүлбэр бичихэд хэрэгтэй үгс — «Харах/Хаах» товчтой эвхэгддэг хэсэг */
+  let wboxOpen = false;
+  try { wboxOpen = localStorage.getItem('dl-wbox') === '1'; } catch (e) { }
+  function hintsBox(it) {
+    const hs = (it.hints || []).map(h => {
+      let de = h, mn = '';
+      if (h.includes('|')) [de, mn] = h.split('|');
+      else { const w = W.find(x => wordLabel(x) === h || x.de === h); mn = w ? w.mn : ''; }
+      return { de: de.trim(), mn: mn.trim() };
+    });
+    if (!hs.length) return '';
+    return `<div class="wbox ${wboxOpen ? 'open' : ''}"><button type="button" class="wbox-t" aria-expanded="${wboxOpen}">${icon('cards')} <span>Хэрэгтэй үгс</span> <b class="wbox-n">${hs.length}</b><span class="wbox-c">${wboxOpen ? 'Хаах' : 'Харах'}</span></button>
+      <div class="wbox-l">${hs.map(w => `<div class="wbox-r"><span class="wbox-de">${esc(w.de)}</span><span class="wbox-mn">${esc(w.mn)}</span>${sayBtn(w.de)}</div>`).join('')}</div></div>`;
+  }
+  function setWbox(box, open) {
+    box.classList.toggle('open', open);
+    const t = $('.wbox-t', box); t.setAttribute('aria-expanded', open); $('.wbox-c', box).textContent = open ? 'Хаах' : 'Харах';
+  }
+  function openWbox(card) { const b = $('.wbox', card); if (b) setWbox(b, true); }
+  document.addEventListener('click', e => {
+    const t = e.target.closest && e.target.closest('.wbox-t'); if (!t) return;
+    const box = t.closest('.wbox'); const open = !box.classList.contains('open');
+    setWbox(box, open); wboxOpen = open;
+    try { localStorage.setItem('dl-wbox', open ? '1' : '0'); } catch (x) { }
+  });
   function hintChip(h) {
     let de = h, mn = '';
     if (h.includes('|')) [de, mn] = h.split('|');
@@ -844,7 +869,7 @@
       const isMn = /[а-яөүё]/i.test(it.prompt);
       card.insertAdjacentHTML('afterbegin', `<div class="label">${esc(it.task)}</div>
         <div class="q ${isMn ? 'q-mn' : ''}">${esc(it.prompt)}</div>
-        ${it.hints.length ? `<div class="hints">${it.hints.map(h => { return hintChip(h); }).join('')}</div>` : ''}
+        ${hintsBox(it)}
         <textarea class="field write-field" rows="2" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Герман өгүүлбэрээ бич…"></textarea>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
@@ -857,6 +882,7 @@
       let words = 0;
       return {
         hint() {
+          openWbox(card);
           const a = it.answers[0].split(' ');
           words = Math.min(a.length - 1, words + 2);
           f.placeholder = a.slice(0, words).join(' ') + ' …';
@@ -878,9 +904,9 @@
     },
     steps(card, it) {
       const rows = it.rows;
-      card.insertAdjacentHTML('afterbegin', `<div class="label">${rows.map(r => esc(r.l)).join(rows.length === 3 ? ' → ' : ' · ')}</div>
+      card.insertAdjacentHTML('afterbegin', `<div class="label">${it.head ? esc(it.head) : rows.map(r => esc(r.l)).join(rows.length === 3 ? ' → ' : ' · ')}</div>
         <div class="q q-mn">${esc(it.mn)}</div>
-        ${it.hints && it.hints.length ? `<div class="hints">${it.hints.map(h => { return hintChip(h); }).join('')}</div>` : ''}
+        ${hintsBox(it)}
         <div class="tense-rows">${rows.map((r, k) => `<div class="tense-row"><span class="tl">${esc(r.l)}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${esc(r.ph || (k === 0 ? 'Гол өгүүлбэр…' : k === 1 ? 'Туслах өгүүлбэр…' : (it.conj === 'ob' ? '…, ob …' : '…, dass …')))}"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
@@ -893,7 +919,7 @@
         if (e.key === 'Enter' && k < fields.length - 1 && !f.readOnly) { e.preventDefault(); e.stopPropagation(); fields[k + 1].focus(); }
       }));
       return {
-        hint() { $$('.hint-chip', card).forEach(c => { if (!c.classList.contains('revealed')) c.click(); }); fields[0].placeholder = rows[0].a[0].split(' ').slice(0, 2).join(' ') + ' …'; },
+        hint() { openWbox(card); fields[0].placeholder = rows[0].a[0].split(' ').slice(0, 2).join(' ') + ' …'; },
         check() {
           if (fields.every(f => !f.value.trim())) { fields[0].focus(); return null; }
           let good = 0; const wrongParts = [];
@@ -946,7 +972,7 @@
       const tenses = [['p', 'Präsens'], ['pr', 'Präteritum'], ['pf', 'Perfekt']];
       card.insertAdjacentHTML('afterbegin', `<div class="label">Гурван цагаар орчуул</div>
         <div class="q q-mn">${esc(it.mn)}</div>
-        <div class="hints">${it.hints.map(h => { return hintChip(h); }).join('')}</div>
+        ${hintsBox(it)}
         <div class="tense-rows">${tenses.map(([k, n]) => `<div class="tense-row"><span class="tl">${n}</span><input class="field" data-t="${k}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${n}…"><div class="fb" data-fb="${k}"></div></div>`).join('')}</div>
         ${umlautBar()}`);
       $$('.hint-chip', card).forEach(c => c.addEventListener('click', () => {
@@ -960,7 +986,7 @@
         if (e.key === 'Enter' && k < 2 && !fields[k + 1].readOnly && !f.readOnly) { e.preventDefault(); e.stopPropagation(); fields[k + 1].focus(); }
       }));
       return {
-        hint() { $$('.hint-chip', card).forEach(c => { if (!c.classList.contains('revealed')) c.click(); }); },
+        hint() { openWbox(card); },
         check() {
           if (fields.every(f => !f.value.trim())) { fields[0].focus(); return null; }
           let good = 0; const wrongParts = []; let say = null;
@@ -1143,7 +1169,7 @@
       } else if (it.type === 'write') {
         out.push({ type: 'tiles', q: it.prompt, sub: it.task, label: /[а-яөүё]/i.test(it.prompt) ? 'Герман өгүүлбэрийг үгсээс угсар' : 'Нийлүүлсэн өгүүлбэрийг угсар', answer: it.answers[0], distract: distractors(it.answers[0]) });
       } else if (it.type === 'steps') {
-        const r = it.conj === 'zu' ? pick(it.rows) : it.rows[it.rows.length - 1];
+        const r = (it.conj === 'zu' || it.conj === 'multi') ? pick(it.rows) : it.rows[it.rows.length - 1];
         const a = r.a[0];
         out.push({ type: 'tiles', q: it.mn, sub: r.l, answer: a, distract: distractors(a) });
       } else if (it.type === 'input' && /[а-яөүё]/i.test(it.q) && it.answers[0].split(' ').length > 2) {

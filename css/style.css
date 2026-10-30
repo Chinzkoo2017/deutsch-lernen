@@ -639,3 +639,20 @@ body.kb-open .umlauts { display: none; }
 .wv [data-h]{cursor:pointer;transition:filter .2s,opacity .2s}
 .vt-hide-mn .wv [data-h="mn"]:not(.peek),.vt-hide-de .wv [data-h="de"]:not(.peek){filter:blur(7px);opacity:.55}
 .wb-words{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Хэрэгтэй үгс — эвхэгддэг хэсэг */
+.wbox{border:1px solid var(--line,rgba(255,255,255,.12));border-radius:14px;background:rgba(255,255,255,.025);overflow:hidden}
+.wbox-t{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;font-size:14px;font-weight:500}
+.wbox-t:focus-visible{outline:2px solid var(--gold);outline-offset:-2px;border-radius:14px}
+.wbox-t svg{width:16px;height:16px;opacity:.8}
+.wbox-n{font-size:12px;padding:1px 8px;border-radius:99px;background:color-mix(in srgb,var(--gold) 22%,transparent);color:var(--gold)}
+.wbox-c{margin-left:auto;font-size:12px;opacity:.7;display:flex;align-items:center;gap:4px}
+.wbox-c::after{content:'';width:7px;height:7px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s}
+.wbox.open .wbox-c::after{transform:rotate(-135deg) translateY(-1px)}
+.wbox-l{display:none;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 14px;padding:4px 14px 12px}
+.wbox.open .wbox-l{display:grid;animation:wboxIn .2s ease}
+@keyframes wboxIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.wbox-r{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.07);font-size:14px;min-width:0}
+.wbox-de{font-weight:600;white-space:nowrap}
+.wbox-mn{opacity:.7;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wbox-r .say,.wbox-r button{flex:none}
