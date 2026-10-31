@@ -352,6 +352,17 @@
     }
     return prev[n];
   }
+  /* Үсгийн жижиг алдааг л өршөөнө: богино (дүрмийн) үгс — den/dem, hat/hatte, ein/eine — ялгаатай бол буруу */
+  function typoOnly(u, n) {
+    const a = u.split(' '), b = n.split(' ');
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] === b[i]) continue;
+      if (b[i].length < 5 || a[i].length < 4) return false;
+      if (lev(a[i], b[i]) > Math.max(1, Math.floor(b[i].length / 6))) return false;
+    }
+    return true;
+  }
   function judge(user, answers) {
     const u = norm(user);
     if (!u) return { ok: false, empty: true, expected: answers[0] };
@@ -363,7 +374,7 @@
     }
     const len = norm(best.a).length;
     const tol = len >= 14 ? Math.max(1, Math.floor(len / 18)) : 0;
-    if (best.d <= tol) return { ok: true, typo: true, expected: best.a };
+    if (best.d <= tol && typoOnly(u, norm(best.a))) return { ok: true, typo: true, expected: best.a };
     return { ok: false, expected: best.a };
   }
   function diffHTML(expected, user) {
