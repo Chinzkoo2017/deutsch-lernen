@@ -656,3 +656,16 @@ body.kb-open .umlauts { display: none; }
 .wbox-de{font-weight:600;white-space:nowrap}
 .wbox-mn{opacity:.7;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .wbox-r .say,.wbox-r button{flex:none}
+
+/* Багшийг чирэх (утас/таблет) */
+@media (max-width: 1180px) {
+  .teacher-stage { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .teacher-col { transition: transform .12s ease-out; }
+  .teacher-col.dragging { transition: none; }
+  .teacher-col.dragging .teacher-stage { cursor: grabbing; box-shadow: 0 24px 60px rgba(0,0,0,.75), 0 0 0 2px var(--gold); }
+  .teacher-stage::after { content: ''; position: absolute; left: 50%; bottom: 7px; width: 34px; height: 4px; margin-left: -17px; border-radius: 4px; background: rgba(255,255,255,.28); pointer-events: none; }
+}
+@media (max-width: 1180px) {
+  .teacher-col.left .teacher-stage { margin-left: 0; margin-right: auto; }
+  .teacher-col.left .bubble::before { right: auto; left: 60px; }
+}

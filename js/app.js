@@ -471,11 +471,50 @@
     vb.addEventListener('click', e => { e.stopPropagation(); S.settings.voice = !S.settings.voice; save(); syncTools(); toast(S.settings.voice ? 'Багшийн дуу асаалаа' : 'Багшийн дуу унтраалаа'); });
     mb.addEventListener('click', e => { e.stopPropagation(); S.settings.mini = !S.settings.mini; save(); syncTools(); });
     syncTools();
+    teacherDrag();
     $('#teacher-stage').addEventListener('click', () => {
       const tip = pick(D.TIPS);
       teacherSay(tip.de, tip.mn, 'think', true);
     });
     refreshChrome();
+  }
+  /* Утас/таблет дээр багшийг хуруугаар чирж хүссэн газраа байрлуулна (байрлал хадгалагдана) */
+  function teacherDrag() {
+    const col = $('#teacher-col'), stage = $('#teacher-stage');
+    const mq = matchMedia('(max-width: 1180px)');
+    let pos = null; try { pos = JSON.parse(localStorage.getItem('dl-tpos') || 'null'); } catch (e) { }
+    let cur = { x: 0, y: 0 };
+    const set = (x, y) => {
+      if (!mq.matches) { col.style.transform = ''; cur = { x: 0, y: 0 }; return; }
+      const r = col.getBoundingClientRect(), bl = r.left - cur.x, bt = r.top - cur.y, m = 6;
+      x = Math.min(innerWidth - r.width - bl - m, Math.max(m - bl, x));
+      y = Math.min(innerHeight - r.height - bt - m, Math.max(m - bt, y));
+      cur = { x, y }; col.style.transform = `translate(${x}px, ${y}px)`;
+      col.classList.toggle('left', bl + x + r.width / 2 < innerWidth / 2);
+    };
+    const restore = () => { cur = { x: 0, y: 0 }; col.style.transform = ''; col.classList.remove('left'); if (pos && mq.matches) set(pos.x, pos.y); };
+    let st = null, moved = false;
+    stage.addEventListener('pointerdown', e => {
+      if (!mq.matches || e.button > 0 || e.target.closest('button')) return;
+      st = { px: e.clientX, py: e.clientY, x: cur.x, y: cur.y, id: e.pointerId }; moved = false;
+    });
+    stage.addEventListener('pointermove', e => {
+      if (!st || e.pointerId !== st.id) return;
+      const dx = e.clientX - st.px, dy = e.clientY - st.py;
+      if (!moved && Math.hypot(dx, dy) < 8) return;
+      if (!moved) { moved = true; try { stage.setPointerCapture(e.pointerId); } catch (x) { } col.classList.add('dragging'); }
+      e.preventDefault(); set(st.x + dx, st.y + dy);
+    });
+    const end = () => {
+      if (!st) return; st = null;
+      if (moved) { col.classList.remove('dragging'); pos = cur; try { localStorage.setItem('dl-tpos', JSON.stringify(pos)); } catch (x) { } }
+    };
+    stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+    stage.addEventListener('click', e => { if (moved) { e.stopImmediatePropagation(); moved = false; } }, true);
+    stage.addEventListener('dblclick', e => { if (!mq.matches) return; pos = null; try { localStorage.removeItem('dl-tpos'); } catch (x) { } restore(); toast('Багш анхны байрандаа буцлаа'); });
+    addEventListener('resize', restore);
+    new ResizeObserver(() => { if (mq.matches && (cur.x || cur.y)) set(cur.x, cur.y); }).observe(col);
+    restore();
   }
   function refreshChrome() {
     const L = levelOf(S.xp);
