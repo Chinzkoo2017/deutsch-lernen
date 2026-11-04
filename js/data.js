@@ -933,7 +933,7 @@
   /* Хичээлийн өдрийн тэмдэглэл (шинэ хичээл бүрт энд нэмнэ) */
   const UNTERRICHT = [
     {
-      date: '2026-10-24', title: 'dass · ob · Akkusativ-Verben',
+      date: '2026-10-24', klasse: 'Анги 1 · Nebensätze', title: 'dass · ob · Akkusativ-Verben',
       points: [
         'dass-Satz: HS → NS → «HS, dass Subj … Obj Verb». Монгол өгүүлбэрт subjekt байхгүй бол Nebensatz-д өөрсдөө нэмнэ.',
         'ob-Satz: «эсэх» — Ich weiß nicht, ob der Chef heute kommt.',
@@ -946,6 +946,25 @@
       ],
       lessons: ['dass', 'ob', 'akkverben', 'praeteritumsein'],
       ues: ['ue9b', 'ue13']
+    },
+    {
+      date: '2026-11-03', klasse: 'Анги 2 · Дүрэм дуусгах', title: 'Genitiv-Präpositionen · Kausal & Konzessiv',
+      points: [
+        'Genitiv шаарддаг угтвар үгс: wegen (учраас), aufgrund (шалтгаан), infolge (үр дагавараар), trotz (…г үл харгалзан), während (үед), statt (оронд), dank (ачаар), ungeachtet (үл хайхран), außerhalb (гадна), innerhalb (дотор), oberhalb (дээгүүр), unterhalb (доогуур).',
+        'weil-Satz → угтвар үгтэй хэлц: «weil der Flug lange gedauert hat» → wegen der langen Dauer des Fluges. Үйл үг → нэр үг (krank war → die Krankheit).',
+        'Үгийн дараалал: Subj · Verb · Obj · Präp + Obj. Харин ab, seit, nach + in + Genitiv-угтвар: Subj · Verb · Präp + Obj · Obj (Ich war wegen der langen Dauer des Fluges sehr müde).',
+        'Угтвар үгтэй хэсгээр эхэлбэл үйл үг 2-р байранд: Wegen ihrer Krankheit hat Susanna den Kurs nicht besucht.',
+        'und — HS + HS холбоно; subjekt ижил бол хоёр дахь удаа бичихгүй: Ich habe mich erkältet und bin heute im Bett geblieben.',
+        'Kausal: NS-Konjunktion weil, da · HS-Konjunktion denn (Pos. 0), nämlich (Pos. 3) · Adverb deshalb, deswegen, daher, darum (тиймээс) · Präp. wegen (aufgrund, dank).',
+        'Konzessiv: NS-Konjunktion obwohl, obschon, obgleich (…г үл харгалзан) · Adverb trotzdem (гэсэн ч) · Präp. trotz (ungeachtet).'
+      ],
+      fixes: [
+        ['Ich habe mich erkältet und ich bin im Bett geblieben.', 'Ich habe mich erkältet und bin im Bett geblieben.'],
+        ['Sie müssen innerhalb einer Woche ihren Krankenschein vorlegen.', 'Sie müssen innerhalb einer Woche Ihren Krankenschein vorlegen.'],
+        ['Sie können … ihren Nachrichten … hinterlassen.', 'Sie können außerhalb der Öffnungszeiten Ihre Nachricht auf dem Anrufbeantworter hinterlassen.']
+      ],
+      lessons: ['genitivpraep', 'kausalkonzessiv'],
+      ues: []
     }
   ];
 
@@ -1503,6 +1522,117 @@
         inp('Sie hat das Problem dadurch gelöst, ___ sie den Chef angerufen hat.', 'dass'),
         mc('Dadurch, dass er früh losging, …', ['erreichte er den Zug.', 'er erreichte den Zug.'], 'erreichte er den Zug.', 'Nebensatz эхэнд → үндсэн өгүүлбэр үйл үгээр эхэлнэ.'),
         inp('Man spart Energie. Man schaltet das Licht aus. (indem)', 'Man spart Energie, indem man das Licht ausschaltet.')
+      ]
+    },
+    {
+      id: 'genitivpraep', chapter: 'G1', title: 'Präpositionen mit Genitiv', mn: 'Genitiv шаарддаг угтвар үгс', source: 'Хичээл · 03.11.2026',
+      intro: { de: 'Wegen des Regens bleiben wir heute drinnen und lernen Genitiv!', mn: 'Бороо орж байгаа учраас өнөөдөр дотроо Genitiv үзье!' },
+      rules: [
+        'Эдгээр угтвар үгийн дараах нэр үг <b>Genitiv</b>-т орно: <b>des</b> Fluges, <b>der</b> Krankheit, <b>des</b> Internets, <b>einer</b> Woche.',
+        'Эр ба саармаг хүйсийн нэр үг Genitiv-т <b>-s / -es</b> авна: des Flug<b>es</b>, des Internet<b>s</b>, des Verbot<b>es</b>.',
+        '<b>Шалтгаан:</b> wegen (учраас), aufgrund (шалтгаанаар), infolge (үр дагавараар), dank (ачаар). <b>Эсрэг:</b> trotz (…г үл харгалзан), ungeachtet (үл хайхран). <b>Орлох:</b> statt (оронд). <b>Цаг:</b> während (үед), innerhalb (дотор). <b>Байр:</b> außerhalb (гадна), innerhalb (дотор), oberhalb (дээгүүр), unterhalb (доогуур).',
+        '<b>Nebensatz → угтвар үг:</b> үйл үгээ нэр үг болгоно. <i>weil der Flug lange gedauert hat</i> → <b>wegen der langen Dauer des Fluges</b>; <i>weil sie krank war</i> → <b>wegen ihrer Krankheit</b>.',
+        '<b>Үгийн дараалал:</b> Subj · Verb · Obj · Präp+Obj. Онцгой: <b>ab, seit, nach</b> болон <b>Genitiv-угтвар</b> → Subj · Verb · Präp+Obj · Obj: <i>Susanna hat <b>wegen ihrer Krankheit</b> den Französischkurs nicht besucht.</i>',
+        'Угтвар хэсгээр эхэлбэл үйл үг шууд дараа нь (2-р байр): <i><b>Trotz ihrer Krankheit hat</b> Susanna den Kurs besucht.</i>'
+      ],
+      table: {
+        head: ['Präposition', 'Утга', 'Жишээ'],
+        rows: [
+          ['wegen', 'учраас', 'wegen der langen Dauer des Fluges'],
+          ['aufgrund', '(шалтгаанаас) болоод', 'aufgrund der Nachhaltigkeit'],
+          ['infolge', '(үр дагавараар) болоод', 'infolge der Hitze'],
+          ['trotz', '…г үл харгалзан', 'trotz ihrer Krankheit'],
+          ['während', 'үед', 'während der Prüfung'],
+          ['statt', 'оронд', 'statt der Gabel'],
+          ['dank', 'ачаар', 'dank des Internets'],
+          ['ungeachtet', 'үл хайхран', 'ungeachtet des Verbotes'],
+          ['außerhalb', 'гадна, гадуур', 'außerhalb der Öffnungszeiten'],
+          ['innerhalb', 'дотор', 'innerhalb einer Woche'],
+          ['oberhalb', 'дээгүүр', 'oberhalb der Tür'],
+          ['unterhalb', 'доогуур', 'unterhalb des Fensters']
+        ]
+      },
+      examples: [
+        { de: 'Ich war wegen der langen Dauer des Fluges sehr müde.', mn: 'Нислэг удаан үргэлжилсэн учраас би их ядарсан.' },
+        { de: 'Susanna hat trotz ihrer Krankheit den Französischkurs besucht.', mn: 'Сузанна өвчтэй байсан ч франц хэлний курсэд суусан.' },
+        { de: 'Infolge der Hitze ist der Unterricht ausgefallen.', mn: 'Халуунаас болоод хичээл ороогүй (цуцлагдсан).' },
+        { de: 'Ich hatte während der Prüfung Fieber.', mn: 'Шалгалтын үеэр би халуурсан.' },
+        { de: 'Der Kunde benutzt statt der Gabel ein Messer.', mn: 'Үйлчлүүлэгч сэрээний оронд хутга хэрэглэж байна.' },
+        { de: 'Dank des Internets können wir uns schnell und bequem informieren.', mn: 'Интернэтийн ачаар бид хурдан, амар мэдээлэл авч чадна.' },
+        { de: 'Susanna ist ungeachtet des Verbotes ihrer Eltern allein nach Südamerika gereist.', mn: 'Сузанна эцэг эхийнхээ хоригийг үл хайхран ганцаараа Өмнөд Америк руу аялсан.' },
+        { de: 'Ein schönes Gemälde hängt oberhalb der Tür.', mn: 'Хаалганы дээд хэсэгт нэг сайхан уран зураг өлгөөтэй байна.' },
+        { de: 'Sie müssen innerhalb einer Woche Ihren Krankenschein vorlegen.', mn: 'Та долоо хоногийн дотор эмчийн магадлагаагаа үзүүлэх хэрэгтэй.' },
+        { de: 'Sie können außerhalb der Öffnungszeiten Ihre Nachricht auf dem Anrufbeantworter hinterlassen.', mn: 'Та ажлын бус цагаар утасны автомат хариулагчид үлдээж болно.' },
+        { de: 'Aufgrund der Nachhaltigkeit und der hohen Qualität bevorzuge ich Markenprodukte.', mn: 'Удаан эдэлгээтэй, өндөр чанартай учраас би брэндийн бараа илүүд үздэг.' }
+      ],
+      items: [
+        mc('Ich war ___ der langen Dauer des Fluges sehr müde. (учраас)', ['wegen', 'trotz', 'statt'], 'wegen', 'wegen = учраас (шалтгаан).'),
+        mc('Susanna hat ___ ihrer Krankheit den Kurs besucht. (…г үл харгалзан)', ['trotz', 'wegen', 'dank'], 'trotz', 'trotz = үл харгалзан.'),
+        mc('___ des Internets können wir uns schnell informieren. (ачаар)', ['Dank', 'Statt', 'Infolge'], 'Dank', 'dank = ачаар (сайн үр дүн).'),
+        mc('Der Kunde benutzt statt ___ Gabel ein Messer.', ['der', 'die', 'den'], 'der', 'die Gabel → Genitiv: der Gabel.'),
+        mc('Dank ___ Internets …', ['des', 'dem', 'das'], 'des', 'das Internet → Genitiv: des Internets.'),
+        mc('Wegen ___ Regens fällt das Spiel aus.', ['des', 'der', 'dem'], 'des', 'der Regen → des Regens.'),
+        mc('Ein Gemälde hängt ___ der Tür. (дээгүүр)', ['oberhalb', 'unterhalb', 'außerhalb'], 'oberhalb'),
+        mc('Sie müssen ___ einer Woche Ihren Krankenschein vorlegen. (дотор)', ['innerhalb', 'außerhalb', 'während'], 'innerhalb'),
+        mc('Wegen ihrer Krankheit ___', ['hat Susanna den Kurs nicht besucht.', 'Susanna hat den Kurs nicht besucht.'], 'hat Susanna den Kurs nicht besucht.', 'Угтвар хэсгээр эхэлбэл үйл үг 2-р байранд.'),
+        mc('Зөв дараалал аль нь?', ['Susanna hat wegen ihrer Krankheit den Kurs nicht besucht.', 'Susanna hat den Kurs wegen ihrer Krankheit nicht besucht.'], 'Susanna hat wegen ihrer Krankheit den Kurs nicht besucht.', 'Хичээл дээрх дүрэм: Genitiv-угтвар хэсэг объектын өмнө.'),
+        inp('weil sie krank war → wegen ___ ___', ['ihrer Krankheit', 'wegen ihrer Krankheit'], 'krank sein → die Krankheit → Genitiv: ihrer Krankheit.'),
+        inp('weil es heiß war → infolge ___ ___', ['der Hitze', 'infolge der Hitze'], 'heiß → die Hitze → der Hitze.'),
+        tiles('Халуунаас болоод хичээл ороогүй.', 'Infolge der Hitze ist der Unterricht ausgefallen.'),
+        tiles('Шалгалтын үеэр би халуурсан.', 'Ich hatte während der Prüfung Fieber.'),
+        tiles('Интернэтийн ачаар бид хурдан мэдээлэл авч чадна.', 'Dank des Internets können wir uns schnell informieren.'),
+        Wx('Нислэг удаан үргэлжилсэн учраас би их ядарсан. (wegen)', ['Ich war wegen der langen Dauer des Fluges sehr müde.', 'Wegen der langen Dauer des Fluges war ich sehr müde.'], ['wegen|учраас', 'die Dauer|үргэлжлэх хугацаа', 'der Flug|нислэг', 'müde|ядарсан']),
+        Wx('Сузанна өвчтэй байсан ч франц хэлний курсэд суусан. (trotz)', ['Susanna hat trotz ihrer Krankheit den Französischkurs besucht.', 'Trotz ihrer Krankheit hat Susanna den Französischkurs besucht.'], ['trotz|үл харгалзан', 'die Krankheit|өвчин', 'der Französischkurs|франц хэлний курс', 'besuchen|суух']),
+        Wx('Үйлчлүүлэгч сэрээний оронд хутга хэрэглэж байна. (statt)', ['Der Kunde benutzt statt der Gabel ein Messer.', 'Statt der Gabel benutzt der Kunde ein Messer.'], ['der Kunde|үйлчлүүлэгч', 'benutzen|хэрэглэх', 'die Gabel|сэрээ', 'das Messer|хутга']),
+        Wx('Сузанна эцэг эхийнхээ хоригийг үл хайхран ганцаараа Өмнөд Америк руу аялсан. (ungeachtet)', ['Susanna ist ungeachtet des Verbotes ihrer Eltern allein nach Südamerika gereist.', 'Ungeachtet des Verbotes ihrer Eltern ist Susanna allein nach Südamerika gereist.', 'Susanna ist ungeachtet des Verbots ihrer Eltern allein nach Südamerika gereist.'], ['ungeachtet|үл хайхран', 'das Verbot|хориг', 'die Eltern|эцэг эх', 'reisen|аялах', 'Südamerika|Өмнөд Америк']),
+        Wx('Хаалганы дээд хэсэгт нэг сайхан уран зураг өлгөөтэй байна. (oberhalb)', ['Ein schönes Gemälde hängt oberhalb der Tür.', 'Oberhalb der Tür hängt ein schönes Gemälde.'], ['das Gemälde|уран зураг', 'hängen|өлгөөтэй байх', 'die Tür|хаалга']),
+        Wx('Та долоо хоногийн дотор эмчийн магадлагаагаа үзүүлэх хэрэгтэй. (innerhalb)', ['Sie müssen innerhalb einer Woche Ihren Krankenschein vorlegen.', 'Innerhalb einer Woche müssen Sie Ihren Krankenschein vorlegen.'], ['die Woche|долоо хоног', 'der Krankenschein|эмчийн магадлагаа', 'vorlegen|үзүүлэх']),
+        Wx('Удаан эдэлгээтэй, өндөр чанартай учраас би брэндийн бараа илүүд үздэг. (aufgrund)', ['Ich bevorzuge aufgrund der Nachhaltigkeit und der hohen Qualität Markenprodukte.', 'Aufgrund der Nachhaltigkeit und der hohen Qualität bevorzuge ich Markenprodukte.', 'Ich bevorzuge aufgrund der Nachhaltigkeit und hohen Qualität Markenprodukte.', 'Aufgrund der Nachhaltigkeit und hohen Qualität bevorzuge ich Markenprodukte.'], ['bevorzugen|илүүд үзэх', 'die Nachhaltigkeit|удаан эдэлгээ, тогтвортой байдал', 'die Qualität|чанар', 'das Markenprodukt|брэндийн бараа'])
+      ]
+    },
+    {
+      id: 'kausalkonzessiv', chapter: 'G1', title: 'Kausale & konzessive Sätze', mn: 'Шалтгаан ба эсрэгцэл: weil, denn, deshalb, wegen · obwohl, trotzdem, trotz', source: 'Хичээл · 03.11.2026',
+      intro: { de: 'Weil du fleißig bist, lernst du schnell. Trotzdem: wiederholen!', mn: 'Хичээнгүй учраас хурдан сурна. Гэсэн ч давтаарай!' },
+      rules: [
+        'Нэг санааг <b>4 янзаар</b> хэлж болно: Nebensatz-холбоос, Hauptsatz-холбоос, Adverb, Präposition.',
+        '<b>Kausal (шалтгаан):</b> NS — <b>weil, da</b> (үйл үг төгсгөлд) · HS — <b>denn</b> (Pos. 0 — дараалал өөрчлөгдөхгүй), <b>nämlich</b> (Pos. 3 — үйл үгийн ард) · Adverb — <b>deshalb, deswegen, daher, darum</b> (тиймээс; Pos. 1 → үйл үг дараа нь) · Präp — <b>wegen</b> (aufgrund, dank) + Genitiv.',
+        '<b>Konzessiv (эсрэгцэл):</b> NS — <b>obwohl, obschon, obgleich</b> (…сан ч, …хэдий ч) · Adverb — <b>trotzdem</b> (гэсэн ч) · Präp — <b>trotz</b> (ungeachtet) + Genitiv.',
+        '<b>denn</b> Pos. 0: <i>…, denn sie <b>war</b> krank.</i> · <b>nämlich</b> Pos. 3: <i>Sie <b>war</b> nämlich krank.</i> · <b>deshalb</b> Pos. 1: <i>…, deshalb <b>hat</b> sie …</i>'
+      ],
+      table: {
+        head: ['Төрөл', 'Kausal (учраас)', 'Konzessiv (…ч гэсэн)'],
+        rows: [
+          ['NS-Konjunktion', 'weil, da', 'obwohl, obschon, obgleich'],
+          ['HS-Konjunktion', 'denn (Pos. 0), nämlich (Pos. 3)', '-'],
+          ['Adverb', 'deshalb, deswegen, daher, darum', 'trotzdem'],
+          ['Präposition + Gen.', 'wegen (aufgrund, dank)', 'trotz (ungeachtet)']
+        ]
+      },
+      examples: [
+        { de: 'Susanna hat den Französischkurs nicht besucht, weil sie krank war.', mn: 'Сузанна өвчтэй байсан учраас франц хэлний курсэд суугаагүй.' },
+        { de: 'Susanna hat den Französischkurs nicht besucht, denn sie war krank.', mn: 'denn — Pos. 0, дараалал өөрчлөгдөхгүй.' },
+        { de: 'Susanna hat den Französischkurs nicht besucht. Sie war nämlich krank.', mn: 'nämlich — үйл үгийн ард (Pos. 3).' },
+        { de: 'Susanna war krank, deshalb hat sie den Französischkurs nicht besucht.', mn: 'deshalb — Pos. 1, үйл үг шууд дараа нь.' },
+        { de: 'Wegen ihrer Krankheit hat Susanna den Französischkurs nicht besucht.', mn: 'wegen + Genitiv.' },
+        { de: 'Susanna hat den Französischkurs besucht, obwohl sie krank war.', mn: 'Сузанна өвчтэй байсан ч курсэд суусан.' },
+        { de: 'Susanna war krank, trotzdem hat sie den Französischkurs besucht.', mn: 'trotzdem — гэсэн ч.' },
+        { de: 'Trotz ihrer Krankheit hat Susanna den Französischkurs besucht.', mn: 'trotz + Genitiv.' }
+      ],
+      items: [
+        mc('Susanna hat den Kurs nicht besucht, ___ sie war krank.', ['denn', 'weil', 'deshalb'], 'denn', 'Үйл үг (war) 2-р байранд → HS-холбоос denn.'),
+        mc('Susanna hat den Kurs nicht besucht, ___ sie krank war.', ['weil', 'denn', 'trotzdem'], 'weil', 'Үйл үг төгсгөлд → NS-холбоос weil.'),
+        mc('Susanna war krank, ___ hat sie den Kurs nicht besucht.', ['deshalb', 'weil', 'obwohl'], 'deshalb', 'Adverb deshalb → үйл үг шууд дараа нь (hat sie).'),
+        mc('Susanna war krank, ___ hat sie den Kurs besucht.', ['trotzdem', 'deshalb', 'denn'], 'trotzdem', 'Эсрэгцэл + урвуу дараалал → trotzdem.'),
+        mc('Susanna hat den Kurs besucht, ___ sie krank war.', ['obwohl', 'weil', 'trotz'], 'obwohl'),
+        mc('___ ihrer Krankheit hat Susanna den Kurs besucht.', ['Trotz', 'Obwohl', 'Trotzdem'], 'Trotz', 'Нэр үгийн өмнө → угтвар үг trotz (+Gen).'),
+        mc('Sie war ___ krank.', ['nämlich', 'denn', 'weil'], 'nämlich', 'nämlich үйл үгийн ард (Pos. 3).'),
+        mc('Susanna war krank, deshalb …', ['hat sie den Kurs nicht besucht.', 'sie hat den Kurs nicht besucht.'], 'hat sie den Kurs nicht besucht.', 'deshalb Pos. 1 → үйл үг дараа нь.'),
+        inp('Susanna war krank. Sie hat den Kurs nicht besucht. (deshalb)', ['Susanna war krank, deshalb hat sie den Kurs nicht besucht.', 'Susanna war krank. Deshalb hat sie den Kurs nicht besucht.']),
+        inp('Susanna hat den Kurs besucht. Sie war krank. (obwohl)', ['Susanna hat den Kurs besucht, obwohl sie krank war.', 'Obwohl sie krank war, hat Susanna den Kurs besucht.']),
+        inp('Susanna hat den Kurs nicht besucht. Sie war krank. (nämlich)', 'Susanna hat den Kurs nicht besucht. Sie war nämlich krank.'),
+        tiles('Сузанна өвчтэй байсан ч курсэд суусан.', 'Susanna hat den Kurs besucht, obwohl sie krank war.'),
+        tiles('Сузанна өвчтэй байсан, гэсэн ч курсэд суусан.', 'Susanna war krank, trotzdem hat sie den Kurs besucht.'),
+        Wx('Би аймаар ханиад хүрээд өнөөдөр бүтэн өдөр орондоо хэвтсэн. (und)', ['Ich habe mich schrecklich erkältet und bin heute den ganzen Tag im Bett geblieben.'], ['sich erkälten|ханиад хүрэх', 'schrecklich|аймаар', 'den ganzen Tag|бүтэн өдөр', 'im Bett bleiben|орондоо хэвтэх'], 'und — HS + HS; ижил subjekt (ich)-ийг дахин бичихгүй.')
       ]
     }
   ];

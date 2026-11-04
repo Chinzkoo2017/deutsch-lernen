@@ -1951,10 +1951,11 @@
   VIEWS.unterricht = function (v) {
     v.innerHTML = `${topbar('Unterricht')}
       <div class="lesson-head"><h1 class="h-hero">Unterricht</h1><p class="sub-mn" style="margin:0">Анги дээр үзсэн хичээл бүр — товч тэмдэглэл, засвар, тухайн өдрийн дасгал.</p></div>
-      <div class="grid">${D.UNTERRICHT.slice().reverse().map(u => `<a class="tile" href="#stunde-${u.date}">
+      ${[...new Set(D.UNTERRICHT.slice().reverse().map(u => u.klasse || 'Анги'))].map(k => `<div class="label" style="margin:8px 4px -4px">${esc(k)}</div>
+      <div class="grid">${D.UNTERRICHT.slice().reverse().filter(u => (u.klasse || 'Анги') === k).map(u => `<a class="tile" href="#stunde-${u.date}">
         <span class="nr">${fmtDate(u.date)}</span><span class="h-card">${esc(u.title)}</span>
         <span class="muted">${esc(u.points[0])}</span>
-        <span class="tile-foot">${u.lessons.length} дүрэм · ${u.ues.length} дасгал</span></a>`).join('')}</div>`;
+        <span class="tile-foot">${u.lessons.length} дүрэм · ${u.ues.length ? u.ues.length + ' дасгал' : 'дасгал удахгүй'}</span></a>`).join('')}</div>`).join('')}`;
   };
   VIEWS.stunde = function (v, date) {
     const u = D.UNTERRICHT.find(x => x.date === date) || D.UNTERRICHT[D.UNTERRICHT.length - 1];
@@ -1962,7 +1963,7 @@
     const lessons = u.lessons.map(id => D.LESSONS.find(l => l.id === id)).filter(Boolean);
     const ues = u.ues.map(id => D.WORKBOOK.find(x => x.id === id)).filter(Boolean);
     v.innerHTML = `${topbar('Unterricht · ' + fmtDate(u.date), 'unterricht')}
-      <div class="lesson-head"><span class="pill gold" style="justify-self:start">${fmtDate(u.date)}</span><h1 class="h-hero">${esc(u.title)}</h1></div>
+      <div class="lesson-head"><div class="row-flex"><span class="pill gold">${fmtDate(u.date)}</span>${u.klasse ? `<span class="pill">${esc(u.klasse)}</span>` : ''}</div><h1 class="h-hero">${esc(u.title)}</h1></div>
       <section class="panel"><div class="label" style="margin-bottom:14px">Гол санаа</div>
         <div class="rules">${u.points.map((p, k) => `<div class="rule"><span class="dot">${k + 1}</span><div>${esc(p)}</div></div>`).join('')}</div></section>
       ${u.fixes && u.fixes.length ? `<section class="panel"><div class="label" style="margin-bottom:12px">Тэмдэглэлийн засвар</div>
