@@ -669,3 +669,16 @@ body.kb-open .umlauts { display: none; }
   .teacher-col.left .teacher-stage { margin-left: 0; margin-right: auto; }
   .teacher-col.left .bubble::before { right: auto; left: 60px; }
 }
+
+/* Анги сонгох */
+.kp-list { display: grid; gap: 12px; }
+.kp-item { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 4px; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--line-strong); background: rgba(255,255,255,.03); transition: border-color .15s, background .15s, transform .15s; }
+.kp-item b { font-size: 19px; }
+.kp-item .muted { font-size: 13.5px; line-height: 1.45; }
+.kp-item:hover, .kp-item:focus-visible { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 8%, transparent); transform: translateY(-1px); }
+.kp-item.on { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.kl-chip { cursor: pointer; color: inherit; font-family: var(--font); }
+.kl-chip:hover { border-color: var(--gold); }
+.kl-chip b { font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar .brand { cursor: pointer; }
+@media (max-width: 760px) { .kl-chip b { max-width: 90px; font-size: 12px; } }

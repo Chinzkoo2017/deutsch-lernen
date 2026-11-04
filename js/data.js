@@ -933,7 +933,7 @@
   /* Хичээлийн өдрийн тэмдэглэл (шинэ хичээл бүрт энд нэмнэ) */
   const UNTERRICHT = [
     {
-      date: '2026-10-24', klasse: 'Анги 1 · Nebensätze', title: 'dass · ob · Akkusativ-Verben',
+      date: '2026-10-24', k: 'mittel', title: 'dass · ob · Akkusativ-Verben',
       points: [
         'dass-Satz: HS → NS → «HS, dass Subj … Obj Verb». Монгол өгүүлбэрт subjekt байхгүй бол Nebensatz-д өөрсдөө нэмнэ.',
         'ob-Satz: «эсэх» — Ich weiß nicht, ob der Chef heute kommt.',
@@ -948,7 +948,7 @@
       ues: ['ue9b', 'ue13']
     },
     {
-      date: '2026-11-03', klasse: 'Анги 2 · Дүрэм дуусгах', title: 'Genitiv-Präpositionen · Kausal & Konzessiv',
+      date: '2026-11-03', k: 'abschluss', title: 'Genitiv-Präpositionen · Kausal & Konzessiv',
       points: [
         'Genitiv шаарддаг угтвар үгс: wegen (учраас), aufgrund (шалтгаан), infolge (үр дагавараар), trotz (…г үл харгалзан), während (үед), statt (оронд), dank (ачаар), ungeachtet (үл хайхран), außerhalb (гадна), innerhalb (дотор), oberhalb (дээгүүр), unterhalb (доогуур).',
         'weil-Satz → угтвар үгтэй хэлц: «weil der Flug lange gedauert hat» → wegen der langen Dauer des Fluges. Үйл үг → нэр үг (krank war → die Krankheit).',
@@ -966,6 +966,17 @@
       lessons: ['genitivpraep', 'kausalkonzessiv'],
       ues: []
     }
+  ];
+
+  /* Ангиуд — вэбэд орохдоо аль ангийнх гэдгээ сонгоно */
+  const KLASSEN = [
+    { id: 'mittel', name: 'Дүрэм дунд шат', de: 'Grammatik · Mittelstufe', desc: 'Өнгөрсөн цаг, dass, ob, zu, W-Satz, weil, obwohl, wenn/als, nachdem, damit, indem … — дасгалын номын Übung 1–27.' },
+    { id: 'abschluss', name: 'Дүрэм дуусгах', de: 'Grammatik · Abschluss', desc: 'Шинэ анги (03.11.2026-аас): Genitiv-угтвар үг, kausale & konzessive Sätze …' }
+  ];
+  /* «Дүрэм дуусгах» ангийн курс — дасгал ирэхээр ues-д нэмнэ */
+  const COURSE2 = [
+    { nr: 1, title: 'Präpositionen mit Genitiv', lesson: 'genitivpraep', ues: [] },
+    { nr: 2, title: 'Kausale & konzessive Sätze', lesson: 'kausalkonzessiv', ues: [] }
   ];
 
   /* Курсийн дараалал — Inhaltsverzeichnis */
@@ -1525,7 +1536,7 @@
       ]
     },
     {
-      id: 'genitivpraep', chapter: 'G1', title: 'Präpositionen mit Genitiv', mn: 'Genitiv шаарддаг угтвар үгс', source: 'Хичээл · 03.11.2026',
+      id: 'genitivpraep', k: 'abschluss', chapter: '1', title: 'Präpositionen mit Genitiv', mn: 'Genitiv шаарддаг угтвар үгс', source: 'Хичээл · 03.11.2026',
       intro: { de: 'Wegen des Regens bleiben wir heute drinnen und lernen Genitiv!', mn: 'Бороо орж байгаа учраас өнөөдөр дотроо Genitiv үзье!' },
       rules: [
         'Эдгээр угтвар үгийн дараах нэр үг <b>Genitiv</b>-т орно: <b>des</b> Fluges, <b>der</b> Krankheit, <b>des</b> Internets, <b>einer</b> Woche.',
@@ -1591,7 +1602,7 @@
       ]
     },
     {
-      id: 'kausalkonzessiv', chapter: 'G1', title: 'Kausale & konzessive Sätze', mn: 'Шалтгаан ба эсрэгцэл: weil, denn, deshalb, wegen · obwohl, trotzdem, trotz', source: 'Хичээл · 03.11.2026',
+      id: 'kausalkonzessiv', k: 'abschluss', chapter: '2', title: 'Kausale & konzessive Sätze', mn: 'Шалтгаан ба эсрэгцэл: weil, denn, deshalb, wegen · obwohl, trotzdem, trotz', source: 'Хичээл · 03.11.2026',
       intro: { de: 'Weil du fleißig bist, lernst du schnell. Trotzdem: wiederholen!', mn: 'Хичээнгүй учраас хурдан сурна. Гэсэн ч давтаарай!' },
       rules: [
         'Нэг санааг <b>4 янзаар</b> хэлж болно: Nebensatz-холбоос, Hauptsatz-холбоос, Adverb, Präposition.',
@@ -1693,5 +1704,5 @@
     { de: 'Für B2: Lies jeden Tag einen kurzen Zeitungsartikel.', mn: 'B2-д: өдөр бүр нэг богино мэдээ унш.' }
   ];
 
-  window.DL_DATA = { WORDLISTS, UNTERRICHT, PRAISE_BIG, SCOLD, COURSE, IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
+  window.DL_DATA = { KLASSEN, COURSE2, WORDLISTS, UNTERRICHT, PRAISE_BIG, SCOLD, COURSE, IRREG, IRREG_GROUPS, VOCAB, VERBFORMS, HABENSEIN, WORKBOOK, LESSONS, PRAISE, CONSOLE, TIPS };
 })();

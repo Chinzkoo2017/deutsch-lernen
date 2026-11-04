@@ -23,6 +23,7 @@
   /* ---------------- Дүрс тэмдэг ---------------- */
   const P = {
     home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+    users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
     book: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7M8 11h7',
     pencil: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
     cards: 'M5 7h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zM7 3h12a2 2 0 0 1 2 2v12',
@@ -539,6 +540,7 @@
     return `<div class="topbar">
       ${back ? `<a class="icon-btn" href="#${back}" title="Буцах" aria-label="Буцах">${icon('back')}</a>` : ''}
       <span class="crumb">${crumb}</span><span class="spacer"></span>
+      <button type="button" class="chip-stat kl-chip" data-kpick title="Анги солих">${icon('users')}<b>${esc(klasseObj().name)}</b></button>
       <span class="chip-stat streak" title="Дараалсан өдөр">${icon('flame')}<b data-live-streak>${currentStreak()}</b></span>
       <a class="chip-stat xp" href="#fortschritt" title="Нийт XP — ахиц харах" style="color:inherit;text-decoration:none">${icon('bolt')}<b data-live-xp>${S.xp}</b><span class="levelbar"><i data-live-level style="width:${pct}%"></i></span></a>
     </div>`;
@@ -1091,7 +1093,7 @@
           <h1 class="h-hero">Hallo, ${esc(USER.name)}!</h1>
           <p class="sub-mn" style="margin:0">Өнөөдөр B2 руу дахин нэг алхам. Дүрэм, үг, тоглоом — аль нь эхлэх вэ?</p>
           <div class="row-flex" style="margin-top:6px">
-            <a class="btn primary" href="#workbook-${nu.u.id}">${icon('arrow')} Үргэлжлүүлэх: ${esc(nu.u.title)} · Kapitel ${nu.c.nr}</a>
+            ${nu ? `<a class="btn primary" href="#workbook-${nu.u.id}">${icon('arrow')} Үргэлжлүүлэх: ${esc(nu.u.title)} · Kapitel ${nu.c.nr}</a>` : (() => { const l = lessonsK().find(x => !((S.lessons[x.id] || {}).best >= 80)) || lessonsK()[0]; return l ? `<a class="btn primary" href="#lesson-${l.id}">${icon('arrow')} Үргэлжлүүлэх: ${esc(l.title)}</a>` : ''; })()}
             <a class="btn" href="#karten">${icon('cards')} Карт давтах${due ? ` (${due})` : ''}</a>
           </div>
         </div>
@@ -1100,7 +1102,7 @@
           <div class="ring-txt"><b>${done}</b><span>/ ${goal} XP</span></div>
         </div>
       </section>
-      ${D.UNTERRICHT.length ? (() => { const u = D.UNTERRICHT[D.UNTERRICHT.length - 1]; return `<a class="tile" href="#stunde-${u.date}" style="flex-direction:row;align-items:center;gap:16px"><span class="tile-ico">${icon('clock')}</span><span style="display:grid;gap:2px;min-width:0"><span class="label">Сүүлийн хичээл · ${u.date.split('-').reverse().join('.')}</span><span class="h-card">${esc(u.title)}</span><span class="muted" style="font-size:13px">Хичээлээ давтах — ${u.lessons.length} дүрэм, ${u.ues.length} дасгал</span></span><span style="margin-left:auto">${icon('arrow')}</span></a>`; })() : ''}
+      ${unterrichtK().length ? (() => { const u = unterrichtK()[unterrichtK().length - 1]; return `<a class="tile" href="#stunde-${u.date}" style="flex-direction:row;align-items:center;gap:16px"><span class="tile-ico">${icon('clock')}</span><span style="display:grid;gap:2px;min-width:0"><span class="label">Сүүлийн хичээл · ${u.date.split('-').reverse().join('.')}</span><span class="h-card">${esc(u.title)}</span><span class="muted" style="font-size:13px">Хичээлээ давтах — ${u.lessons.length} дүрэм, ${u.ues.length} дасгал</span></span><span style="margin-left:auto">${icon('arrow')}</span></a>`; })() : ''}
       <div class="stats4">
         <div class="stat"><span class="label">Level</span><b>${L}</b><span class="muted" style="font-size:13px">${titleOf(L)}</span></div>
         <div class="stat"><span class="label">XP</span><b>${S.xp}</b><span class="muted" style="font-size:13px">нийт</span></div>
@@ -1110,8 +1112,8 @@
       <div class="grid c2">
         <a class="tile" href="#starke"><span class="tile-ico">${icon('bolt')}</span><span class="h-card">Starke Verben</span><span class="muted">${D.IRREG.length} дүрмийн бус үйл үг — 3 хэлбэрийг нь хурдан цээжил</span>
           <span class="tile-foot"><span class="progress ok"><i style="width:${Math.round(100 * irrMastered() / D.IRREG.length)}%"></i></span>${irrMastered()}/${D.IRREG.length}</span></a>
-        <a class="tile" href="#uebungen"><span class="tile-ico">${icon('pencil')}</span><span class="h-card">Kurs</span><span class="muted">Inhaltsverzeichnis-ийн дарааллаар 27 бичгийн дасгал. Дараагийн: ${esc(nu.u.title)}</span>
-          <span class="tile-foot"><span class="progress ok"><i style="width:${Math.round(100 * cp.done / cp.total)}%"></i></span>${cp.done}/${cp.total}</span></a>
+        <a class="tile" href="#uebungen"><span class="tile-ico">${icon('pencil')}</span><span class="h-card">Kurs</span><span class="muted">${nu ? `Inhaltsverzeichnis-ийн дарааллаар. Дараагийн: ${esc(nu.u.title)}` : `${esc(klasseObj().name)} — бүлгүүд, дүрэм`}</span>
+          <span class="tile-foot"><span class="progress ok"><i style="width:${cp.total ? Math.round(100 * cp.done / cp.total) : 0}%"></i></span>${cp.done}/${cp.total}</span></a>
         <a class="tile" href="#karten"><span class="tile-ico">${icon('cards')}</span><span class="h-card">Karteikarten</span><span class="muted">${due ? `${due} үг давтах цаг болсон` : `${fresh} шинэ үг хүлээж байна`}</span>
           <span class="tile-foot">${icon('clock')} ~${Math.max(2, Math.round((due || 10) * .25))} мин</span></a>
         <a class="tile" href="#artikel"><span class="tile-ico">${icon('rain')}</span><span class="h-card">Artikel-Regen</span><span class="muted">der, die, das — бороо шиг унах үгсийг барь!</span>
@@ -1137,8 +1139,8 @@
   VIEWS.grammatik = function (v) {
     v.innerHTML = `${topbar('Grammatik')}
       <div class="lesson-head"><h1 class="h-hero">Grammatik</h1><p class="sub-mn" style="margin:0">Самбар дээрх хичээл ба дасгалын номын (Inhaltsverzeichnis) бүх сэдэв. Сэдэв бүр тайлбар, хүснэгт, интерактив дасгалтай.</p></div>
-      <div class="row-flex"><span class="pill gold">${lessonsPassed()}/${D.LESSONS.length} сэдэв 80%+</span><a class="btn small" href="#mix">${icon('shuffle')} Холимог дасгал</a></div>
-      <div class="grid c2">${D.LESSONS.map(l => {
+      <div class="row-flex"><span class="pill">${esc(klasseObj().name)}</span><span class="pill gold">${lessonsK().filter(l => (S.lessons[l.id] || {}).best >= 80).length}/${lessonsK().length} сэдэв 80%+</span><a class="btn small" href="#mix">${icon('shuffle')} Холимог дасгал</a></div>
+      <div class="grid c2">${lessonsK().map(l => {
         const b = (S.lessons[l.id] || {}).best;
         return `<a class="tile ${b >= 80 ? 'done' : ''}" href="#lesson-${l.id}">
           <span class="nr">Kapitel ${esc(l.chapter)} · ${esc(l.source)}</span>
@@ -1231,7 +1233,12 @@
 
   /* ---------- Курс (Inhaltsverzeichnis-ийн дарааллаар) ---------- */
   const WB = id => D.WORKBOOK.find(u => u.id === id);
-  const courseOrder = () => D.COURSE.flatMap(c => c.ues.map(id => ({ u: WB(id), c })));
+  const KL = () => (S.settings && S.settings.klasse) || 'mittel';
+  const klasseObj = () => D.KLASSEN.find(k => k.id === KL()) || D.KLASSEN[0];
+  const COURSE = () => KL() === 'abschluss' ? D.COURSE2 : D.COURSE;
+  const lessonsK = () => D.LESSONS.filter(l => (l.k || 'mittel') === KL());
+  const unterrichtK = () => D.UNTERRICHT.filter(u => (u.k || 'mittel') === KL());
+  const courseOrder = () => COURSE().flatMap(c => c.ues.map(id => ({ u: WB(id), c })));
   function nextUebung() {
     const all = courseOrder();
     return all.find(x => !((S.workbook[x.u.id] || {}).best >= 80)) || all[0];
@@ -1245,6 +1252,16 @@
     return { done: all.filter(x => (S.workbook[x.u.id] || {}).best >= 80).length, total: all.length };
   }
   VIEWS.uebungen = function (v) {
+    if (!courseOrder().length) {
+      v.innerHTML = `${topbar('Kurs')}
+        <div class="lesson-head"><span class="pill gold" style="justify-self:start">${esc(klasseObj().name)}</span><h1 class="h-hero">Kurs</h1>
+          <p class="sub-mn" style="margin:0">Энэ ангийн бүлгүүд. Дасгалын номын Übung-ууд ирэхээр энд нэмэгдэнэ — одоохондоо дүрмээ уншаад дасгалыг нь хийгээрэй.</p></div>
+        ${COURSE().map(c => { const l = D.LESSONS.find(x => x.id === c.lesson) || {}; const b = (S.lessons[c.lesson] || {}).best; return `<section class="panel kap">
+          <div class="row-flex" style="justify-content:space-between;align-items:flex-start"><div style="display:grid;gap:4px;min-width:0;flex:1"><div class="label">Kapitel ${c.nr}</div><h2 class="h-sec">${esc(c.title)}</h2><span class="muted">${esc(l.mn || '')}</span></div>
+          <a class="btn small gold" href="#lesson-${c.lesson}">${icon('book')} Дүрэм · ${b != null ? b + '%' : (l.items || []).length + ' даалгавар'}</a></div>
+          <p class="muted" style="margin:10px 0 0;font-size:13px">Übung — удахгүй.</p></section>`; }).join('')}`;
+      return;
+    }
     const nx = nextUebung(), cp = courseProgress();
     v.innerHTML = `${topbar('Kurs')}
       <div class="lesson-head"><h1 class="h-hero">Kurs</h1>
@@ -1257,7 +1274,7 @@
         <div class="progress ok"><i style="width:${Math.round(100 * cp.done / cp.total)}%"></i></div>
         <p class="muted" style="margin:0;font-size:13px"><span class="pill gold">номоос</span> — дасгалын номын яг өгүүлбэр. <span class="pill">зохиосон</span> — тухайн сэдэв ба хичээлийн үйл үгээр зохиосон дасгал. Номын хуудсыг зураг авч өгвөл жинхэнэ дасгалаар сольж болно.</p>
       </section>
-      ${D.COURSE.map(c => `<section class="panel kap">
+      ${COURSE().map(c => `<section class="panel kap">
         <div class="row-flex" style="justify-content:space-between;align-items:flex-start">
           <div style="display:grid;gap:4px;min-width:0;flex:1"><div class="label">Kapitel ${c.nr}</div><h2 class="h-sec">${esc(c.title)}</h2></div>
           <a class="btn small" href="#lesson-${c.lesson}">${icon('book')} Дүрэм</a>
@@ -1277,7 +1294,7 @@
     const [id, n] = String(arg || '').split('~');
     const u = WB(id);
     if (!u) return VIEWS.uebungen(v);
-    const chap = D.COURSE.find(c => c.ues.includes(id));
+    const chap = D.COURSE.concat(D.COURSE2).find(c => c.ues.includes(id));
     const tilesMode = n === 'tiles', wordsMode = n === 'words';
     const WL = (D.WORDLISTS || {})[id];
     let items = n && !tilesMode ? sample(u.items, Number(n)) : u.items.slice();
@@ -1951,19 +1968,19 @@
   VIEWS.unterricht = function (v) {
     v.innerHTML = `${topbar('Unterricht')}
       <div class="lesson-head"><h1 class="h-hero">Unterricht</h1><p class="sub-mn" style="margin:0">Анги дээр үзсэн хичээл бүр — товч тэмдэглэл, засвар, тухайн өдрийн дасгал.</p></div>
-      ${[...new Set(D.UNTERRICHT.slice().reverse().map(u => u.klasse || 'Анги'))].map(k => `<div class="label" style="margin:8px 4px -4px">${esc(k)}</div>
-      <div class="grid">${D.UNTERRICHT.slice().reverse().filter(u => (u.klasse || 'Анги') === k).map(u => `<a class="tile" href="#stunde-${u.date}">
+      <div class="label" style="margin:8px 4px -4px">${esc(klasseObj().name)}</div>
+      ${[0].map(() => `<div class="grid">${unterrichtK().slice().reverse().map(u => `<a class="tile" href="#stunde-${u.date}">
         <span class="nr">${fmtDate(u.date)}</span><span class="h-card">${esc(u.title)}</span>
         <span class="muted">${esc(u.points[0])}</span>
         <span class="tile-foot">${u.lessons.length} дүрэм · ${u.ues.length ? u.ues.length + ' дасгал' : 'дасгал удахгүй'}</span></a>`).join('')}</div>`).join('')}`;
   };
   VIEWS.stunde = function (v, date) {
-    const u = D.UNTERRICHT.find(x => x.date === date) || D.UNTERRICHT[D.UNTERRICHT.length - 1];
+    const u = D.UNTERRICHT.find(x => x.date === date) || unterrichtK()[unterrichtK().length - 1] || D.UNTERRICHT[D.UNTERRICHT.length - 1];
     if (!u) return VIEWS.unterricht(v);
     const lessons = u.lessons.map(id => D.LESSONS.find(l => l.id === id)).filter(Boolean);
     const ues = u.ues.map(id => D.WORKBOOK.find(x => x.id === id)).filter(Boolean);
     v.innerHTML = `${topbar('Unterricht · ' + fmtDate(u.date), 'unterricht')}
-      <div class="lesson-head"><div class="row-flex"><span class="pill gold">${fmtDate(u.date)}</span>${u.klasse ? `<span class="pill">${esc(u.klasse)}</span>` : ''}</div><h1 class="h-hero">${esc(u.title)}</h1></div>
+      <div class="lesson-head"><div class="row-flex"><span class="pill gold">${fmtDate(u.date)}</span><span class="pill">${esc((D.KLASSEN.find(k => k.id === (u.k || 'mittel')) || {}).name || '')}</span></div><h1 class="h-hero">${esc(u.title)}</h1></div>
       <section class="panel"><div class="label" style="margin-bottom:14px">Гол санаа</div>
         <div class="rules">${u.points.map((p, k) => `<div class="rule"><span class="dot">${k + 1}</span><div>${esc(p)}</div></div>`).join('')}</div></section>
       ${u.fixes && u.fixes.length ? `<section class="panel"><div class="label" style="margin-bottom:12px">Тэмдэглэлийн засвар</div>
@@ -2074,6 +2091,26 @@
   onDisposeGlobal = () => KB.hide();
 
   /* ---------------- Эхлүүлэх (нэвтэрсний дараа) ---------------- */
+  /* Анги сонгох */
+  function syncBrand() { const b = $('.sidebar .brand-text span'); if (b) b.textContent = klasseObj().name; }
+  function pickKlasse(first) {
+    let el = $('#kpick'); if (el) el.remove();
+    el = document.createElement('div'); el.id = 'kpick'; el.className = 'auth kpick';
+    el.innerHTML = `<div class="auth-card" style="width:min(560px,100%)"><div class="label">${first ? 'Willkommen, ' + esc(USER.name) + '!' : 'Анги солих'}</div>
+      <h1 class="h-sec" style="margin:4px 0 14px">Аль ангид суралцаж байна вэ?</h1>
+      <div class="kp-list">${D.KLASSEN.map(k => `<button type="button" class="kp-item ${S.settings.klasse === k.id ? 'on' : ''}" data-k="${k.id}"><span class="label">${esc(k.de)}</span><b>${esc(k.name)}</b><span class="muted">${esc(k.desc)}</span></button>`).join('')}</div>
+      <p class="muted" style="margin:14px 0 0;font-size:13px">Дээд талын «${icon('users')} анги» товчоор хүссэн үедээ солино. Ахиц, XP, үгсийн сан хоёр ангид нийтлэг.</p>
+      ${first ? '' : '<button type="button" class="btn ghost small" data-kclose style="margin-top:10px">Болих</button>'}</div>`;
+    document.body.appendChild(el); document.body.classList.add('auth-open');
+    const close = () => { el.remove(); document.body.classList.remove('auth-open'); };
+    $$('[data-k]', el).forEach(b => b.addEventListener('click', () => {
+      S.settings.klasse = b.dataset.k; save(); close(); syncBrand();
+      if (!first) location.hash = 'home'; render();
+      toast('Анги: ' + klasseObj().name);
+    }));
+    const c = $('[data-kclose]', el); if (c) c.addEventListener('click', close);
+  }
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-kpick], .sidebar .brand')) { e.preventDefault(); pickKlasse(false); } });
   window.DL_boot = function (user) {
     USER = user;
     KEY = KEY0 + ':' + user.id;
@@ -2088,7 +2125,7 @@
     S = remote && (remote.updatedAt || 0) >= (local.updatedAt || 0) ? remote : local;
     saveHook = user.onSave || null;
     buildChrome();
-    render();
+    if (!S.settings.klasse) pickKlasse(true); else { syncBrand(); render(); }
     save();
     setTimeout(() => {
       const hr = new Date().getHours();
